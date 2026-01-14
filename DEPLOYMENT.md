@@ -1,268 +1,306 @@
-# CNE Workshop Registration System - Deployment Guide
+# 🚀 Deployment Guide - Aparna CNE Registration System
 
-## Hostinger Cloud Startup Deployment
+## ⚠️ CRITICAL: Read Before Deploying
 
-### Prerequisites
-- Hostinger Cloud Startup plan
-- Domain pointed to your server
-- SSH access to server
+This system uses **MySQL database** on Hostinger. The `.env` file contains database credentials and is **NOT tracked by git** (for security). You must be careful not to delete it during deployment.
 
 ---
 
-## Step 1: Initial Server Setup
+## 📋 Server Details
 
-### 1.1 Connect to Server via SSH
-```bash
-ssh root@your-server-ip
-```
-
-### 1.2 Update System
-```bash
-apt update && apt upgrade -y
-```
-
-### 1.3 Install Node.js (LTS version)
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-apt install -y nodejs
-node --version  # Should show v20.x.x
-npm --version
-```
-
-### 1.4 Install PM2 (Process Manager)
-```bash
-npm install -g pm2
-```
-
-### 1.5 Install Git
-```bash
-apt install -y git
-```
+| Item | Value |
+|------|-------|
+| **Server** | Hostinger Shared Hosting |
+| **SSH Host** | 72.60.19.158 |
+| **SSH Port** | 65002 |
+| **SSH User** | u984810592 |
+| **Website URL** | https://aparnaine.com |
+| **App Directory** | ~/domains/aparnaine.com/public_html |
 
 ---
 
-## Step 2: Clone and Setup Application
+## ✅ SAFE Deployment Method (Recommended)
 
-### 2.1 Create Application Directory
+### Step 1: Push Changes from Local Machine
+```powershell
+# On your local Windows machine
+cd "d:\Bitflow Software\CNE\aparna_cne"
+git add .
+git commit -m "Your commit message"
+git push origin main
+```
+
+### Step 2: Connect to Server
+```powershell
+ssh -p 65002 u984810592@72.60.19.158
+# Enter password when prompted
+```
+
+### Step 3: Pull Changes (SAFE - Preserves .env)
 ```bash
-mkdir -p /var/www
-cd /var/www
-```
-
-### 2.2 Clone Repository
-```bash
-git clone https://github.com/YOUR_USERNAME/aparna-cne.git
-cd aparna-cne
-```
-
-### 2.3 Install Dependencies
-```bash
-npm install --production
-```
-
-### 2.4 Setup Environment Variables
-```bash
-cp .env.example .env
-nano .env
-```
-
-**Edit the .env file with your production values:**
-```env
-NODE_ENV=production
-PORT=3000
-SESSION_SECRET=generate-a-long-random-string-here
-ADMIN_USERNAME=aparnainstitutes
-ADMIN_PASSWORD=your-secure-password
-```
-
-### 2.5 Create Required Directories
-```bash
-mkdir -p logs
-mkdir -p uploads/payments
-mkdir -p uploads/qr-codes
-mkdir -p uploads/bulk
-```
-
-### 2.6 Set Permissions
-```bash
-chmod -R 755 /var/www/aparna-cne
-chown -R www-data:www-data /var/www/aparna-cne
-```
-
----
-
-## Step 3: Start Application with PM2
-
-### 3.1 Start the Application
-```bash
-cd /var/www/aparna-cne
-pm2 start ecosystem.config.js --env production
-```
-
-### 3.2 Save PM2 Process List
-```bash
-pm2 save
-```
-
-### 3.3 Setup PM2 Startup Script
-```bash
-pm2 startup systemd -u root --hp /root
-```
-
-### 3.4 Verify Application is Running
-```bash
-pm2 status
-pm2 logs cne-app
-```
-
----
-
-## Step 4: Configure Nginx Reverse Proxy
-
-### 4.1 Install Nginx (if not installed)
-```bash
-apt install -y nginx
-```
-
-### 4.2 Create Nginx Configuration
-```bash
-nano /etc/nginx/sites-available/cne-app
-```
-
-**Add this configuration:**
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com www.yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        
-        # File upload size limit (adjust as needed)
-        client_max_body_size 50M;
-    }
-}
-```
-
-### 4.3 Enable the Site
-```bash
-ln -s /etc/nginx/sites-available/cne-app /etc/nginx/sites-enabled/
-nginx -t  # Test configuration
-systemctl restart nginx
-```
-
----
-
-## Step 5: Setup SSL with Let's Encrypt
-
-### 5.1 Install Certbot
-```bash
-apt install -y certbot python3-certbot-nginx
-```
-
-### 5.2 Obtain SSL Certificate
-```bash
-certbot --nginx -d yourdomain.com -d www.yourdomain.com
-```
-
-### 5.3 Auto-renewal (automatic with certbot)
-```bash
-certbot renew --dry-run  # Test renewal
-```
-
----
-
-## Step 6: Firewall Configuration
-
-```bash
-ufw allow 22       # SSH
-ufw allow 80       # HTTP
-ufw allow 443      # HTTPS
-ufw enable
-ufw status
-```
-
----
-
-## Useful Commands
-
-### PM2 Commands
-```bash
-pm2 status              # Check app status
-pm2 logs cne-app        # View logs
-pm2 restart cne-app     # Restart app
-pm2 stop cne-app        # Stop app
-pm2 reload cne-app      # Zero-downtime restart
-pm2 monit               # Monitor in real-time
-```
-
-### Update Application
-```bash
-cd /var/www/aparna-cne
+cd ~/domains/aparnaine.com/public_html
 git pull origin main
-npm install --production
-pm2 restart cne-app
+```
+
+### Step 4: Restart Server
+```bash
+touch tmp/restart.txt
+```
+
+### Step 5: Verify Deployment
+```bash
+# Check for errors
+tail -20 stderr.log
+
+# Test API
+curl -s https://aparnaine.com/api/admin/login -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}'
+```
+
+---
+
+## ❌ DANGEROUS Commands (Avoid These)
+
+### Never use `git reset --hard` without backup!
+```bash
+# ❌ THIS DELETES .env FILE!
+git reset --hard origin/main
+
+# If you must use it, FIRST backup .env:
+cp .env .env.backup
+git reset --hard origin/main
+cp .env.backup .env
+rm .env.backup
+touch tmp/restart.txt
+```
+
+### Never use `git clean -fd`
+```bash
+# ❌ THIS DELETES ALL UNTRACKED FILES INCLUDING .env!
+git clean -fd
+```
+
+---
+
+## 🔧 .env File Contents
+
+If the `.env` file gets deleted, recreate it with:
+
+```bash
+cat > .env << 'EOF'
+USE_MYSQL=true
+DB_HOST=127.0.0.1
+DB_USER=u984810592_aparna_admin
+DB_PASSWORD=sCARFACE@2003?.
+DB_NAME=u984810592_aparna_cne
+PORT=3000
+SESSION_SECRET=aparna-cne-secret-2025
+EOF
+```
+
+**Variable Meanings:**
+| Variable | Description |
+|----------|-------------|
+| `USE_MYSQL` | Set to `true` to use MySQL, `false` for local JSON |
+| `DB_HOST` | MySQL server (127.0.0.1 for Hostinger) |
+| `DB_USER` | MySQL username |
+| `DB_PASSWORD` | MySQL password |
+| `DB_NAME` | MySQL database name |
+| `PORT` | Server port (managed by Passenger) |
+| `SESSION_SECRET` | Secret for session encryption |
+
+---
+
+## 🔄 Full Deployment Workflow
+
+### Quick Deploy (Most Common)
+```bash
+# 1. SSH to server
+ssh -p 65002 u984810592@72.60.19.158
+
+# 2. Navigate and pull
+cd ~/domains/aparnaine.com/public_html
+git pull origin main
+
+# 3. Restart
+touch tmp/restart.txt
+
+# 4. Verify
+tail -10 stderr.log
+```
+
+### Deploy with Dependency Updates
+```bash
+# 1. SSH to server
+ssh -p 65002 u984810592@72.60.19.158
+
+# 2. Navigate and pull
+cd ~/domains/aparnaine.com/public_html
+git pull origin main
+
+# 3. Install new dependencies
+npm install
+
+# 4. Restart
+touch tmp/restart.txt
+
+# 5. Verify
+tail -10 stderr.log
+```
+
+### Emergency Recovery (If .env Deleted)
+```bash
+# 1. Recreate .env file
+cat > .env << 'EOF'
+USE_MYSQL=true
+DB_HOST=127.0.0.1
+DB_USER=u984810592_aparna_admin
+DB_PASSWORD=sCARFACE@2003?.
+DB_NAME=u984810592_aparna_cne
+PORT=3000
+SESSION_SECRET=aparna-cne-secret-2025
+EOF
+
+# 2. Restart server
+touch tmp/restart.txt
+
+# 3. Verify
+tail -10 stderr.log
+curl -s https://aparnaine.com/api/admin/login -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username":"aparnainstitutes","password":"APARNA@2025!Admin"}'
+```
+
+---
+
+## 🗄️ Database Information
+
+### MySQL Database
+- **Host:** 127.0.0.1 (localhost on Hostinger)
+- **Database:** u984810592_aparna_cne
+- **User:** u984810592_aparna_admin
+- **Password:** sCARFACE@2003?.
+
+### Check Database Status
+```bash
+mysql -u u984810592_aparna_admin -p'sCARFACE@2003?.' u984810592_aparna_cne -e "
+SELECT 'Users' as tbl, COUNT(*) as cnt FROM users 
+UNION ALL SELECT 'Workshops', COUNT(*) FROM workshops 
+UNION ALL SELECT 'Registrations', COUNT(*) FROM registrations 
+UNION ALL SELECT 'Students', COUNT(*) FROM students
+UNION ALL SELECT 'Attendance', COUNT(*) FROM attendance
+UNION ALL SELECT 'Agents', COUNT(*) FROM agents;"
 ```
 
 ### Backup Database
 ```bash
-cp -r /var/www/aparna-cne/database /root/backups/database-$(date +%Y%m%d)
+mysqldump -u u984810592_aparna_admin -p'sCARFACE@2003?.' u984810592_aparna_cne > backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+### Restore Database
+```bash
+mysql -u u984810592_aparna_admin -p'sCARFACE@2003?.' u984810592_aparna_cne < backup_file.sql
 ```
 
 ---
 
-## Troubleshooting
+## 📝 Troubleshooting
 
-### App not starting?
+### Server Returns 503 Error
 ```bash
-pm2 logs cne-app --lines 100
+# Check error log
+tail -50 stderr.log
+
+# Common causes:
+# 1. Syntax error in code
+# 2. Missing .env file
+# 3. Database connection failed
 ```
 
-### Port already in use?
+### "Access denied for user 'root'" Error
 ```bash
-lsof -i :3000
-kill -9 <PID>
+# .env file is missing or has wrong variable names
+# Recreate it with the command above
+cat .env  # Check if it exists
 ```
 
-### Permission issues?
+### "Cannot find module" Error
 ```bash
-chown -R www-data:www-data /var/www/aparna-cne
-chmod -R 755 /var/www/aparna-cne
+# Install dependencies
+npm install
+touch tmp/restart.txt
 ```
 
-### Nginx errors?
+### Changes Not Reflecting
 ```bash
-nginx -t
-tail -f /var/log/nginx/error.log
+# Make sure you restarted
+touch tmp/restart.txt
+
+# Wait 5-10 seconds, then test
+sleep 5
+curl -s https://aparnaine.com
 ```
 
 ---
 
-## Default Login Credentials
+## 🔐 Admin Credentials
 
-**Admin Panel:** `/admin-login.html`
-- Username: `aparnainstitutes`
-- Password: (set in .env file)
-
-**Attendance Portal:** `/attendance-login.html`
-- Username: `attendance`
-- Password: `attendance123`
-
-⚠️ **IMPORTANT:** Change all default passwords after first login!
+| Portal | Username | Password |
+|--------|----------|----------|
+| Admin Panel | aparnainstitutes | APARNA@2025!Admin |
 
 ---
 
-## Support
+## 📁 Important File Locations
 
-For issues, check:
-1. PM2 logs: `pm2 logs cne-app`
-2. Nginx logs: `/var/log/nginx/error.log`
-3. App logs: `/var/www/aparna-cne/logs/`
+| File/Directory | Purpose |
+|----------------|---------|
+| `~/domains/aparnaine.com/public_html/` | Application root |
+| `.env` | Environment configuration (NOT in git) |
+| `stderr.log` | Server error logs |
+| `tmp/restart.txt` | Touch to restart Passenger |
+| `database/mysql-db.js` | MySQL database operations |
+| `routes/` | All API route handlers |
+
+---
+
+## 🚨 Emergency Contacts
+
+If something breaks and you can't fix it:
+1. Check `stderr.log` for error messages
+2. Verify `.env` file exists and has correct values
+3. Try restarting with `touch tmp/restart.txt`
+4. If database issue, check MySQL credentials in Hostinger panel
+
+---
+
+## 📌 Quick Reference Card
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    QUICK DEPLOY COMMANDS                     │
+├─────────────────────────────────────────────────────────────┤
+│ SSH:     ssh -p 65002 u984810592@72.60.19.158               │
+│ CD:      cd ~/domains/aparnaine.com/public_html             │
+│ PULL:    git pull origin main                               │
+│ RESTART: touch tmp/restart.txt                              │
+│ LOGS:    tail -20 stderr.log                                │
+├─────────────────────────────────────────────────────────────┤
+│                    IF .env DELETED                          │
+├─────────────────────────────────────────────────────────────┤
+│ cat > .env << 'EOF'                                         │
+│ USE_MYSQL=true                                              │
+│ DB_HOST=127.0.0.1                                           │
+│ DB_USER=u984810592_aparna_admin                             │
+│ DB_PASSWORD=sCARFACE@2003?.                                 │
+│ DB_NAME=u984810592_aparna_cne                               │
+│ PORT=3000                                                   │
+│ SESSION_SECRET=aparna-cne-secret-2025                       │
+│ EOF                                                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+*Last Updated: January 14, 2026*
