@@ -784,7 +784,6 @@ router.post('/students/fix-names', isAdmin, async (req, res) => {
     res.json({ 
       success: true, 
       message: `Fixed ${fixedCount} student records with names` 
-    }); 
     });
   } catch (error) {
     console.error('Error fixing student names:', error);
