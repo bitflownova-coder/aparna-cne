@@ -160,6 +160,21 @@ router.post('/register-individual', isAgent, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Workshop not found' });
         }
 
+        // Check if UTR number already exists (must be unique across all registrations)
+        if (registrationData.utrNumber && registrationData.utrNumber.trim() !== '' && registrationData.utrNumber.trim().toUpperCase() !== 'N/A') {
+            const allRegsForUTR = await Registration.find();
+            const utrExists = allRegsForUTR.find(reg => 
+                (reg.paymentUTR && reg.paymentUTR.trim().toLowerCase() === registrationData.utrNumber.trim().toLowerCase()) ||
+                (reg.transactionId && reg.transactionId.trim().toLowerCase() === registrationData.utrNumber.trim().toLowerCase())
+            );
+            if (utrExists) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This UTR/Transaction number has already been used for another registration'
+                });
+            }
+        }
+
         // Check for duplicate: same mobile + same workshop
         const existingRegistrations = await Registration.find();
         const duplicate = existingRegistrations.find(reg => 
@@ -457,6 +472,27 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         message: 'Invalid workshop ID'
                     });
                     continue;
+                }
+
+                // Check if UTR number already exists (must be unique)
+                if (row.utrNumber && row.utrNumber.toString().trim() !== '' && row.utrNumber.toString().trim().toUpperCase() !== 'N/A') {
+                    const allRegsForUTR = await Registration.find();
+                    const utrExists = allRegsForUTR.find(reg => 
+                        (reg.paymentUTR && reg.paymentUTR.trim().toLowerCase() === row.utrNumber.toString().trim().toLowerCase()) ||
+                        (reg.transactionId && reg.transactionId.trim().toLowerCase() === row.utrNumber.toString().trim().toLowerCase())
+                    );
+                    if (utrExists) {
+                        failed++;
+                        results.push({
+                            row: rowNumber,
+                            fullName: row.fullName,
+                            mobileNumber: row.mobileNumber,
+                            workshopTitle: workshop.title,
+                            status: 'error',
+                            message: 'UTR number already used in another registration'
+                        });
+                        continue;
+                    }
                 }
 
                 // Check for duplicate

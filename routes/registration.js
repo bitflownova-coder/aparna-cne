@@ -173,6 +173,19 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
       });
     }
 
+    // Check if UTR number already exists (must be unique across all registrations)
+    const allRegistrations = await Registration.find();
+    const utrExists = allRegistrations.find(reg => 
+      (reg.paymentUTR && reg.paymentUTR.trim().toLowerCase() === paymentUTR.trim().toLowerCase()) ||
+      (reg.transactionId && reg.transactionId.trim().toLowerCase() === paymentUTR.trim().toLowerCase())
+    );
+    if (utrExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'This UTR/Transaction number has already been used for another registration'
+      });
+    }
+
     // Get IP address for tracking
     const ipAddress = req.ip || req.connection.remoteAddress;
 
