@@ -570,11 +570,11 @@
             try {
                 const response = await fetch('/api/admin/check-session');
                 const data = await response.json();
-                if (!data.authenticated || data.role !== 'admin') {
-                    window.location.href = '/admin-login.html';
+                if (!data.success || !data.isAdmin) {
+                    window.location.href = '/admin-login';
                 }
             } catch (error) {
-                window.location.href = '/admin-login.html';
+                window.location.href = '/admin-login';
             }
         }
 
