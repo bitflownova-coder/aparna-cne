@@ -13,7 +13,9 @@ module.exports = {
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        // IMPORTANT: Store database OUTSIDE git folder to prevent data loss on git pull
+        DATA_DIR: '/home/aparna-data'
       },
       // Error and output logs
       error_file: './logs/err.log',
