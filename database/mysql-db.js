@@ -673,15 +673,28 @@ const Registration = {
   
   getNextFormNumber: async (workshopId) => {
     const pool = await getPool();
+    
+    // Get the workshop's cneCpdNumber for the form prefix
+    let prefix = 'REG';
+    if (workshopId) {
+      const [workshopRows] = await pool.query(
+        'SELECT cneCpdNumber FROM workshops WHERE _id = ?',
+        [workshopId]
+      );
+      if (workshopRows.length > 0 && workshopRows[0].cneCpdNumber) {
+        prefix = workshopRows[0].cneCpdNumber;
+      }
+    }
+    
+    // Count registrations for this workshop
     const [rows] = await pool.query(
       'SELECT COUNT(*) as count FROM registrations WHERE workshopId = ?',
       [workshopId]
     );
     const count = rows[0].count + 1;
-    // Format: WS{workshopNumber}-{registrationNumber}
-    // Extract workshop number from workshopId (e.g., WRK000001 -> 1)
-    const wsNum = workshopId ? workshopId.replace(/\D/g, '') : '0';
-    return `WS${wsNum}-${String(count).padStart(4, '0')}`;
+    
+    // Format: {cneCpdNumber}-{registrationNumber} e.g., 1001-0001, CPD-0002
+    return `${prefix}-${String(count).padStart(4, '0')}`;
   }
 };
 
