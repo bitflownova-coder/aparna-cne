@@ -82,6 +82,32 @@ router.get('/check-session', (req, res) => {
     res.json({ authenticated: false });
 });
 
+// Get My Registrations (registrations done by this executive)
+router.get('/my-registrations', isAgent, async (req, res) => {
+    try {
+        const executiveUsername = req.session.executiveUsername;
+        
+        // Get all registrations and filter by executiveUsername
+        const allRegistrations = await Registration.find();
+        const myRegistrations = allRegistrations.filter(reg => 
+            reg.executiveUsername === executiveUsername || 
+            reg.registeredBy === executiveUsername
+        );
+        
+        // Sort by date (newest first)
+        myRegistrations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        res.json({
+            success: true,
+            count: myRegistrations.length,
+            data: myRegistrations
+        });
+    } catch (error) {
+        console.error('Error fetching executive registrations:', error);
+        res.status(500).json({ success: false, message: 'Error fetching registrations' });
+    }
+});
+
 // Logout
 router.post('/logout', (req, res) => {
     req.session.destroy();
