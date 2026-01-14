@@ -4,6 +4,12 @@ const path = require('path');
 // Database directory - Use DATA_DIR env variable for production (outside git repo)
 // Default: ./database for local development
 const DB_DIR = process.env.DATA_DIR || path.join(__dirname, 'database');
+
+// Log the database directory on startup
+console.log('=====================================');
+console.log('DATABASE LOCATION:', DB_DIR);
+console.log('=====================================');
+
 const REGISTRATIONS_FILE = path.join(DB_DIR, 'registrations.json');
 const WORKSHOPS_FILE = path.join(DB_DIR, 'workshops.json');
 const USERS_FILE = path.join(DB_DIR, 'users.json');
