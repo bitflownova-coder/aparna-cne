@@ -1,45 +1,24 @@
-const mongoose = require('mongoose');
-const { Registration: DB } = require('../localdb');
+// Choose database based on environment
+const useMySQL = process.env.USE_MYSQL === 'true';
+let DB;
+if (useMySQL) {
+  DB = require('../database/mysql-db').Registration;
+} else {
+  DB = require('../localdb').Registration;
+}
 
-// Registration model wrapper for local database
+// Registration model wrapper - works with both MySQL and JSON
 const Registration = {
   find: (query = {}) => DB.find(query),
   findOne: (query) => DB.findOne(query),
   findById: (id) => DB.findById(id),
   create: (data) => DB.create(data),
-  findByIdAndUpdate: (id, updates) => DB.updateById(id, updates),
-  findByIdAndDelete: (id) => DB.deleteById(id),
-  countDocuments: (query = {}) => DB.countDocuments(query),
-
-  // Static methods
-  getNextFormNumber: (workshopId = null) => DB.getNextFormNumber(workshopId),
-  getRegistrationCount: (workshopId = null) => DB.countDocuments(workshopId ? { workshopId } : {}),
-  isRegistrationFull: (workshopId = null) => DB.isRegistrationFull(workshopId)
+  findByIdAndUpdate: (id, updates) => DB.findByIdAndUpdate(id, updates),
+  findByIdAndDelete: (id) => DB.findByIdAndDelete(id),
+  countDocuments: (query = {}) => DB.countByWorkshop ? DB.countByWorkshop(query.workshopId) : 0,
+  findByFormNumber: (formNumber) => DB.findByFormNumber(formNumber),
+  findByMobile: (mobile) => DB.findByMobile(mobile),
+  findByWorkshop: (workshopId) => DB.findByWorkshop(workshopId)
 };
 
-// Helper to add methods to registration objects
-function addMethods(reg) {
-  if (!reg) return null;
-
-  return {
-    ...reg,
-    canDownload: reg.downloadCount < 2,
-    incrementDownload: async function() {
-      if (this.downloadCount >= 2) {
-        throw new Error('Download limit reached');
-      }
-      const updated = DB.updateById(this._id, { downloadCount: this.downloadCount + 1 });
-      return addMethods(updated);
-    }
-  };
-}
-
-// Wrap methods
-const WrappedRegistration = {
-  ...Registration,
-  findOne: (query) => addMethods(DB.findOne(query)),
-  findById: (id) => addMethods(DB.findById(id)),
-  create: (data) => addMethods(DB.create(data))
-};
-
-module.exports = WrappedRegistration;
+module.exports = Registration;

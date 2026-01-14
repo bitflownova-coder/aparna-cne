@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let db;
+if (useMySQL) {
+  db = require('../database/mysql-db');
+} else {
+  db = require('../localdb');
+}
 
 // Attendance login endpoint
 router.post('/login', async (req, res) => {
@@ -8,7 +16,8 @@ router.post('/login', async (req, res) => {
         const { username, password } = req.body;
         
         // Check attendance credentials
-        const user = db.User.find({}).find(u => 
+        const users = await db.User.find({});
+        const user = users.find(u => 
             u.username === username && u.role === 'attendance'
         );
         
@@ -110,7 +119,8 @@ router.post('/mark', async (req, res) => {
         }
         
         // Verify student is registered - search by mobile number or MNC registration number
-        const registration = db.Registration.find({}).find(reg => 
+        const allRegistrations = await db.Registration.find({});
+        const registration = allRegistrations.find(reg => 
             (reg.mobileNumber === identifier || reg.mncRegistrationNumber === identifier) && 
             reg.workshopId === workshopId
         );
@@ -123,7 +133,8 @@ router.post('/mark', async (req, res) => {
         }
         
         // Check if attendance already marked for this student using mncUID
-        const existingAttendance = db.Attendance.find({}).find(att => 
+        const allAttendance = await db.Attendance.find({});
+        const existingAttendance = allAttendance.find(att => 
             att.workshopId === workshopId && att.mncUID === registration.mncUID
         );
         
@@ -135,7 +146,6 @@ router.post('/mark', async (req, res) => {
         }
         
         // STRICT CHECK: Block if this device/phone has already marked attendance for ANY student in this workshop
-        const allAttendance = db.Attendance.find({});
         const deviceAlreadyUsed = allAttendance.some(att => 
             att.workshopId === workshopId && 
             att.deviceFingerprint && 
@@ -184,7 +194,8 @@ router.get('/workshop/:workshopId', async (req, res) => {
     try {
         const { workshopId } = req.params;
         
-        const attendances = db.Attendance.find({}).filter(att => 
+        const allAttendances = await db.Attendance.find({});
+        const attendances = allAttendances.filter(att => 
             att.workshopId === workshopId
         );
         
@@ -208,7 +219,8 @@ router.get('/student/:mncUID', async (req, res) => {
     try {
         const { mncUID } = req.params;
         
-        const attendances = db.Attendance.find({}).filter(att => 
+        const allAttendances = await db.Attendance.find({});
+        const attendances = allAttendances.filter(att => 
             att.mncUID === mncUID
         );
         
@@ -230,7 +242,7 @@ router.get('/student/:mncUID', async (req, res) => {
 // Get all attendance (admin)
 router.get('/all', async (req, res) => {
     try {
-        const attendances = db.Attendance.find({});
+        const attendances = await db.Attendance.find({});
         
         res.json({
             success: true,

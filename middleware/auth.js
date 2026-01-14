@@ -1,6 +1,14 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
-const { Agent } = require('../localdb');
+
+// Conditional database import for Agent
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Agent;
+if (useMySQL) {
+  Agent = require('../database/mysql-db').Agent;
+} else {
+  Agent = require('../localdb').Agent;
+}
 
 // Middleware to check if user is authenticated as admin or user
 const isAuthenticated = (req, res, next) => {
@@ -42,7 +50,7 @@ const verifyAdminCredentials = async (username, password) => {
 
 // Verify user credentials
 const verifyUserCredentials = async (username, password) => {
-  const user = User.findOne({ username, status: 'active' });
+  const user = await User.findOne({ username, status: 'active' });
   
   if (!user) {
     return null;
@@ -60,7 +68,7 @@ const verifyUserCredentials = async (username, password) => {
 // Verify agent credentials
 const verifyAgentCredentials = async (username, password) => {
   // Check database first
-  const agent = Agent.verifyCredentials(username, password);
+  const agent = await Agent.verifyCredentials(username, password);
   if (agent) {
     return agent;
   }

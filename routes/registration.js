@@ -4,7 +4,15 @@ const multer = require('multer');
 const path = require('path');
 const Registration = require('../models/Registration');
 const Workshop = require('../models/Workshop');
-const { Student } = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Student;
+if (useMySQL) {
+  Student = require('../database/mysql-db').Student;
+} else {
+  Student = require('../localdb').Student;
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -158,9 +166,10 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     const ipAddress = req.ip || req.connection.remoteAddress;
 
     // Create or update student record with all comprehensive fields
-    let student = Student.findByMobile(mobileNumber.trim());
+    let student = await Student.findByMobile(mobileNumber.trim());
     if (!student) {
-      student = Student.create({
+      student = await Student.create({
+        name: fullName.trim(),
         fullName: fullName.trim(),
         mobileNumber: mobileNumber.trim(),
         email: email.trim(),
@@ -178,7 +187,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
       });
     } else {
       // Update student info with all fields
-      Student.update(student._id, {
+      await Student.update(student._id, {
         fullName: fullName.trim(),
         email: email.trim(),
         dateOfBirth: dateOfBirth,
@@ -196,7 +205,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     }
 
     // Create new registration
-    const registration = Registration.create({
+    const registration = await Registration.create({
       workshopId: workshopId,
       formNumber: formNumber,
       fullName: fullName.trim(),
@@ -213,7 +222,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     });
 
     // Increment student workshop count
-    Student.incrementWorkshopCount(student._id);
+    await Student.incrementWorkshopCount(student._id);
 
     // Increment workshop registration count (auto-marks as full if needed)
     await Workshop.incrementRegistrationCount(workshopId);

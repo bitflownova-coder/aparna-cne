@@ -1,7 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const Registration = require('../models/Registration');
-const localdb = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Student;
+if (useMySQL) {
+  Student = require('../database/mysql-db').Student;
+} else {
+  Student = require('../localdb').Student;
+}
 
 // Lookup MNC details by UID or Registration Number from Students database
 router.post('/lookup', async (req, res) => {
@@ -15,25 +23,13 @@ router.post('/lookup', async (req, res) => {
       });
     }
     
-    // Build query based on what's provided
-    let query = {};
-    if (mncUID) {
-      query.mncUID = mncUID;
-    }
-    if (mncRegistrationNumber) {
-      query.mncRegistrationNumber = mncRegistrationNumber;
-    }
-    
-    // Search in students database first
-    const students = localdb.readDatabase('students');
+    // Search in students database
     let foundStudent = null;
-    
-    for (const student of students) {
-      if ((mncUID && student.mncUID === mncUID) || 
-          (mncRegistrationNumber && student.mncRegistrationNumber === mncRegistrationNumber)) {
-        foundStudent = student;
-        break;
-      }
+    if (mncUID) {
+      foundStudent = await Student.findByMncUID(mncUID);
+    }
+    if (!foundStudent && mncRegistrationNumber) {
+      foundStudent = await Student.findByMncRegistrationNumber(mncRegistrationNumber);
     }
     
     if (foundStudent) {
@@ -42,7 +38,7 @@ router.post('/lookup', async (req, res) => {
         success: true,
         found: true,
         data: {
-          fullName: foundStudent.fullName || '',
+          fullName: foundStudent.fullName || foundStudent.name || '',
           mncUID: foundStudent.mncUID || '',
           mncRegistrationNumber: foundStudent.mncRegistrationNumber || '',
           mobileNumber: foundStudent.mobileNumber || '',
@@ -61,7 +57,11 @@ router.post('/lookup', async (req, res) => {
     }
     
     // Fallback: search in registrations if not found in students
-    const registrations = Registration.find(query);
+    let query = {};
+    if (mncUID) query.mncUID = mncUID;
+    if (mncRegistrationNumber) query.mncRegistrationNumber = mncRegistrationNumber;
+    
+    const registrations = await Registration.find(query);
     
     if (registrations.length === 0) {
       return res.json({

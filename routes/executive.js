@@ -5,7 +5,23 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { verifyAgentCredentials, isAgent } = require('../middleware/auth');
-const { Registration, Workshop, Student, Agent } = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Registration, Workshop, Student, Agent;
+if (useMySQL) {
+  const mysqlDb = require('../database/mysql-db');
+  Registration = mysqlDb.Registration;
+  Workshop = mysqlDb.Workshop;
+  Student = mysqlDb.Student;
+  Agent = mysqlDb.Agent;
+} else {
+  const localDb = require('../localdb');
+  Registration = localDb.Registration;
+  Workshop = localDb.Workshop;
+  Student = localDb.Student;
+  Agent = localDb.Agent;
+}
 
 // Multer configuration for Excel upload
 const storage = multer.diskStorage({
@@ -82,7 +98,7 @@ router.get('/check-user', isAgent, async (req, res) => {
         }
 
         // Find all registrations for this user
-        const allRegistrations = Registration.find();
+        const allRegistrations = await Registration.find();
         const userRegistrations = allRegistrations.filter(reg => {
             if (mobile && reg.mobileNumber === mobile) return true;
             if (email && reg.email && reg.email.toLowerCase() === email.toLowerCase()) return true;
@@ -140,13 +156,13 @@ router.post('/register-individual', isAgent, async (req, res) => {
         }
 
         // Validate workshop exists
-        const workshop = Workshop.findById(registrationData.workshopId);
+        const workshop = await Workshop.findById(registrationData.workshopId);
         if (!workshop) {
             return res.status(404).json({ success: false, message: 'Workshop not found' });
         }
 
         // Check for duplicate: same mobile + same workshop
-        const existingRegistrations = Registration.find();
+        const existingRegistrations = await Registration.find();
         const duplicate = existingRegistrations.find(reg => 
             reg.mobileNumber === registrationData.mobileNumber && 
             reg.workshopId === registrationData.workshopId
@@ -169,7 +185,7 @@ router.post('/register-individual', isAgent, async (req, res) => {
                     transactionId: registrationData.utrNumber || duplicate.transactionId || 'N/A'
                 };
                 
-                const updated = Registration.update(duplicate._id, updatedData);
+                const updated = await Registration.update(duplicate._id, updatedData);
                 
                 return res.json({
                     success: true,
@@ -188,9 +204,10 @@ router.post('/register-individual', isAgent, async (req, res) => {
         }
 
         // Create or update student record
-        let student = Student.findByMobile(registrationData.mobileNumber);
+        let student = await Student.findByMobile(registrationData.mobileNumber);
         if (!student) {
-            student = Student.create({
+            student = await Student.create({
+                name: registrationData.fullName,
                 fullName: registrationData.fullName,
                 mobileNumber: registrationData.mobileNumber,
                 email: registrationData.email,
@@ -206,7 +223,7 @@ router.post('/register-individual', isAgent, async (req, res) => {
             });
         } else {
             // Update student info
-            Student.update(student._id, {
+            await Student.update(student._id, {
                 fullName: registrationData.fullName,
                 email: registrationData.email,
                 dateOfBirth: registrationData.dateOfBirth,
@@ -222,7 +239,7 @@ router.post('/register-individual', isAgent, async (req, res) => {
         }
 
         // Generate form number for this workshop
-        const formNumber = Registration.getNextFormNumber(registrationData.workshopId);
+        const formNumber = await Registration.getNextFormNumber(registrationData.workshopId);
 
         // Create new registration
         const newRegistration = {
@@ -240,10 +257,10 @@ router.post('/register-individual', isAgent, async (req, res) => {
             status: 'confirmed'
         };
 
-        const created = Registration.create(newRegistration);
+        const created = await Registration.create(newRegistration);
         
         // Increment student workshop count
-        Student.incrementWorkshopCount(student._id);
+        await Student.incrementWorkshopCount(student._id);
 
         res.json({
             success: true,
@@ -277,7 +294,7 @@ function checkIfDataChanged(existing, newData) {
 router.get('/download-template', isAgent, async (req, res) => {
     try {
         // Get active workshops for reference
-        const workshops = Workshop.find();
+        const workshops = await Workshop.find();
         
         // Create workbook
         const workbook = XLSX.utils.book_new();
@@ -381,7 +398,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
         }
 
         // Validate workshop exists
-        const workshop = Workshop.findById(workshopId);
+        const workshop = await Workshop.findById(workshopId);
         if (!workshop) {
             fs.unlinkSync(req.file.path);
             return res.status(400).json({ success: false, message: 'Invalid workshop selected' });
@@ -431,7 +448,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                 }
 
                 // Check for duplicate (using workshop from form)
-                const existingRegistrations = Registration.find();
+                const existingRegistrations = await Registration.find();
                 const duplicate = existingRegistrations.find(reg => 
                     reg.mobileNumber === String(row.mobileNumber) && 
                     reg.workshopId === workshopId
@@ -454,7 +471,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                             transactionId: row.utrNumber || duplicate.transactionId || 'N/A'
                         };
                         
-                        Registration.update(duplicate._id, updatedData);
+                        await Registration.update(duplicate._id, updatedData);
                         successful++;
                         
                         results.push({
@@ -478,9 +495,10 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                     }
                 } else {
                     // Create or update student record
-                    let student = Student.findByMobile(String(row.mobileNumber));
+                    let student = await Student.findByMobile(String(row.mobileNumber));
                     if (!student) {
-                        student = Student.create({
+                        student = await Student.create({
+                            name: row.fullName,
                             fullName: row.fullName,
                             mobileNumber: String(row.mobileNumber),
                             email: row.email,
@@ -495,7 +513,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         });
                     } else {
                         // Update student info
-                        Student.update(student._id, {
+                        await Student.update(student._id, {
                             fullName: row.fullName,
                             email: row.email,
                             dateOfBirth: row.dateOfBirth || null,
@@ -510,7 +528,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                     }
                     
                     // Generate form number for this workshop
-                    const formNumber = Registration.getNextFormNumber(workshopId);
+                    const formNumber = await Registration.getNextFormNumber(workshopId);
                     
                     // Create new registration
                     const newRegistration = {
@@ -541,10 +559,10 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         status: 'confirmed'
                     };
 
-                    Registration.create(newRegistration);
+                    await Registration.create(newRegistration);
                     
                     // Increment student workshop count
-                    Student.incrementWorkshopCount(student._id);
+                    await Student.incrementWorkshopCount(student._id);
                     
                     successful++;
 

@@ -5,7 +5,23 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { verifyAgentCredentials, isAgent } = require('../middleware/auth');
-const { Registration, Workshop, Student, Agent } = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Registration, Workshop, Student, Agent;
+if (useMySQL) {
+  const mysqlDb = require('../database/mysql-db');
+  Registration = mysqlDb.Registration;
+  Workshop = mysqlDb.Workshop;
+  Student = mysqlDb.Student;
+  Agent = mysqlDb.Agent;
+} else {
+  const localDb = require('../localdb');
+  Registration = localDb.Registration;
+  Workshop = localDb.Workshop;
+  Student = localDb.Student;
+  Agent = localDb.Agent;
+}
 
 // Multer configuration for Excel upload
 const storage = multer.diskStorage({

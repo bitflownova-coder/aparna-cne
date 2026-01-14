@@ -1,63 +1,27 @@
-const { Workshop: DB } = require('../localdb');
+// Choose database based on environment
+const useMySQL = process.env.USE_MYSQL === 'true';
+let DB;
+if (useMySQL) {
+  DB = require('../database/mysql-db').Workshop;
+} else {
+  DB = require('../localdb').Workshop;
+}
 
-// Workshop model wrapper for local database
+// Workshop model wrapper - works with both MySQL and JSON
 const Workshop = {
   find: (query = {}) => DB.find(query),
   findOne: (query) => DB.findOne(query),
   findById: (id) => DB.findById(id),
   create: (data) => DB.create(data),
-  findByIdAndUpdate: (id, updates) => DB.updateById(id, updates),
-  findByIdAndDelete: (id) => DB.deleteById(id),
+  findByIdAndUpdate: (id, updates) => DB.findByIdAndUpdate(id, updates),
+  findByIdAndDelete: (id) => DB.findByIdAndDelete(id),
   
   // Static methods
   getActiveWorkshop: () => DB.getActiveWorkshop(),
   getActiveWorkshops: () => DB.getActiveWorkshops(),
   getUpcomingWorkshops: () => DB.getUpcomingWorkshops(),
-  getLatestWorkshop: () => DB.getLatestWorkshop()
+  getLatestWorkshop: () => DB.getLatestWorkshop(),
+  incrementRegistrationCount: (id) => DB.incrementRegistrationCount(id)
 };
 
-// Helper to add methods to workshop objects
-function addMethods(workshop) {
-  if (!workshop) return null;
-  
-  return {
-    ...workshop,
-    seatsRemaining: workshop.maxSeats - (workshop.currentRegistrations || 0),
-    incrementRegistrationCount: async function() {
-      return addMethods(DB.incrementRegistrationCount(this._id));
-    },
-    markAsFull: async function() {
-      return addMethods(DB.updateById(this._id, { status: 'full' }));
-    },
-    markCompleted: async function() {
-      return addMethods(DB.updateById(this._id, { status: 'completed' }));
-    },
-    canAcceptRegistrations: function() {
-      return this.status === 'active' && this.currentRegistrations < this.maxSeats;
-    }
-  };
-}
-
-// Wrap methods
-const WrappedWorkshop = {
-  ...Workshop,
-  findOne: (query) => addMethods(DB.findOne(query)),
-  findById: (id) => addMethods(DB.findById(id)),
-  create: (data) => addMethods(DB.create(data)),
-  getActiveWorkshop: () => addMethods(DB.getActiveWorkshop()),
-  getActiveWorkshops: () => {
-    const workshops = DB.getActiveWorkshops();
-    return workshops.map(w => addMethods(w));
-  },
-  getLatestWorkshop: () => addMethods(DB.getLatestWorkshop()),
-  getUpcomingWorkshops: () => {
-    const workshops = DB.getUpcomingWorkshops();
-    return workshops.map(w => addMethods(w));
-  },
-  find: (query = {}) => {
-    const workshops = DB.find(query);
-    return workshops.map(w => addMethods(w));
-  }
-};
-
-module.exports = WrappedWorkshop;
+module.exports = Workshop;

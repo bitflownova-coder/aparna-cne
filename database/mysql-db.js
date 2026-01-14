@@ -88,12 +88,22 @@ async function initDatabase() {
     `CREATE TABLE IF NOT EXISTS students (
       _id VARCHAR(50) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
+      fullName VARCHAR(255),
       mncUID VARCHAR(100),
       mncRegistrationNumber VARCHAR(100),
       mncRegPrefix VARCHAR(50),
       mncRegNumber VARCHAR(50),
       mobileNumber VARCHAR(20),
       email VARCHAR(255),
+      dateOfBirth VARCHAR(50),
+      gender VARCHAR(20),
+      qualification VARCHAR(255),
+      organization VARCHAR(255),
+      experience VARCHAR(100),
+      address TEXT,
+      city VARCHAR(100),
+      state VARCHAR(100),
+      pinCode VARCHAR(20),
       totalWorkshops INT DEFAULT 0,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -270,6 +280,15 @@ const User = {
     const pool = await getPool();
     await pool.query('DELETE FROM users WHERE _id = ?', [id]);
     return true;
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return User.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return User.findByIdAndDelete(id);
   }
 };
 
@@ -290,7 +309,13 @@ const Workshop = {
     
     sql += ' ORDER BY date DESC';
     const [rows] = await pool.query(sql, values);
-    return rows;
+    // Add canAcceptRegistrations method to each workshop
+    return rows.map(w => ({
+      ...w,
+      canAcceptRegistrations: function() {
+        return this.currentRegistrations < this.maxSeats;
+      }
+    }));
   },
   
   findOne: async (query) => {
@@ -380,6 +405,20 @@ const Workshop = {
       [id]
     );
     return Workshop.findById(id);
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return Workshop.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return Workshop.findByIdAndDelete(id);
+  },
+  
+  // Method for workshop that returns a canAcceptRegistrations method
+  canAcceptRegistrations: function() {
+    return this.currentRegistrations < this.maxSeats;
   }
 };
 
@@ -500,6 +539,21 @@ const Student = {
       [id]
     );
     return Student.findById(id);
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return Student.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return Student.findByIdAndDelete(id);
+  },
+  
+  deleteAll: async () => {
+    const pool = await getPool();
+    await pool.query('DELETE FROM students');
+    return true;
   }
 };
 
@@ -592,6 +646,29 @@ const Registration = {
       [workshopId]
     );
     return rows[0].count;
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return Registration.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return Registration.findByIdAndDelete(id);
+  },
+  
+  getRegistrationCount: async (workshopId) => {
+    if (workshopId) {
+      return Registration.countByWorkshop(workshopId);
+    }
+    const pool = await getPool();
+    const [rows] = await pool.query('SELECT COUNT(*) as count FROM registrations');
+    return rows[0].count;
+  },
+  
+  isRegistrationFull: async () => {
+    const count = await Registration.getRegistrationCount();
+    return count >= 500; // Default max
   }
 };
 
@@ -667,6 +744,15 @@ const Attendance = {
     const pool = await getPool();
     await pool.query('DELETE FROM attendance WHERE _id = ?', [id]);
     return true;
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return Attendance.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return Attendance.findByIdAndDelete(id);
   }
 };
 
@@ -752,6 +838,24 @@ const Agent = {
       [id]
     );
     return Agent.findById(id);
+  },
+  
+  // Alias methods for compatibility
+  update: async (id, updates) => {
+    return Agent.findByIdAndUpdate(id, updates);
+  },
+  
+  deleteById: async (id) => {
+    return Agent.findByIdAndDelete(id);
+  },
+  
+  verifyCredentials: async (username, password) => {
+    const pool = await getPool();
+    const [rows] = await pool.query(
+      'SELECT * FROM agents WHERE username = ? AND password = ? AND status = "active" LIMIT 1',
+      [username, password]
+    );
+    return rows[0] || null;
   }
 };
 

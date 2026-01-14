@@ -3,7 +3,22 @@ const router = express.Router();
 const Registration = require('../models/Registration');
 const Workshop = require('../models/Workshop');
 const { isAuthenticated, isAdmin, verifyAdminCredentials, verifyUserCredentials } = require('../middleware/auth');
-const { Student, Agent, Attendance } = require('../localdb');
+
+// Conditional database import
+const useMySQL = process.env.USE_MYSQL === 'true';
+let Student, Agent, Attendance;
+if (useMySQL) {
+  const mysqlDb = require('../database/mysql-db');
+  Student = mysqlDb.Student;
+  Agent = mysqlDb.Agent;
+  Attendance = mysqlDb.Attendance;
+} else {
+  const localDb = require('../localdb');
+  Student = localDb.Student;
+  Agent = localDb.Agent;
+  Attendance = localDb.Attendance;
+}
+
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
@@ -492,7 +507,7 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
     const selectedColumns = columns ? columns.split(',') : null;
     
     // Fetch registrations with optional workshop filter
-    let registrations = Registration.find({});
+    let registrations = await Registration.find({});
     if (workshopId) {
       registrations = registrations.filter(r => r.workshopId === workshopId);
     }
@@ -505,8 +520,7 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
     });
 
     // Fetch attendance records
-    const db = require('../localdb');
-    const allAttendance = db.Attendance.find({});
+    const allAttendance = await Attendance.find({});
     const attendanceMap = {};
     allAttendance.forEach(att => {
       const key = `${att.workshopId}_${att.mncUID}`;
@@ -695,7 +709,7 @@ router.delete('/registrations/:id', isAuthenticated, async (req, res) => {
 // Get all students
 router.get('/students', isAdmin, async (req, res) => {
   try {
-    const students = Student.find();
+    const students = await Student.find();
     res.json({ success: true, students });
   } catch (error) {
     console.error('Error fetching students:', error);
@@ -706,14 +720,13 @@ router.get('/students', isAdmin, async (req, res) => {
 // Get student by ID with registration history
 router.get('/students/:id', isAdmin, async (req, res) => {
   try {
-    const student = Student.findById(req.params.id);
+    const student = await Student.findById(req.params.id);
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
     
-    // Get student's registration history
-    const { Registration: RegModel } = require('../localdb');
-    const registrations = RegModel.find({ studentId: student._id });
+    // Get student's registration history using Registration model
+    const registrations = await Registration.find({ studentId: student._id });
     
     res.json({
       success: true,
@@ -729,7 +742,7 @@ router.get('/students/:id', isAdmin, async (req, res) => {
 // Update student
 router.put('/students/:id', isAdmin, async (req, res) => {
   try {
-    const updated = Student.update(req.params.id, req.body);
+    const updated = await Student.update(req.params.id, req.body);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
@@ -743,7 +756,7 @@ router.put('/students/:id', isAdmin, async (req, res) => {
 // Delete student
 router.delete('/students/:id', isAdmin, async (req, res) => {
   try {
-    Student.deleteById(req.params.id);
+    await Student.deleteById(req.params.id);
     res.json({ success: true, message: 'Student deleted successfully' });
   } catch (error) {
     console.error('Error deleting student:', error);
@@ -754,15 +767,15 @@ router.delete('/students/:id', isAdmin, async (req, res) => {
 // Export students to Excel
 router.get('/students/export/excel', isAdmin, async (req, res) => {
   try {
-    const students = Student.find();
-    const { Registration: RegModel } = require('../localdb');
+    const students = await Student.find();
     
-    const studentsWithDetails = students.map(student => {
-      const registrations = RegModel.find({ studentId: student._id });
+    const studentsWithDetails = [];
+    for (const student of students) {
+      const registrations = await Registration.find({ studentId: student._id });
       
-      return {
+      studentsWithDetails.push({
         'Student ID': student._id,
-        'Full Name': student.fullName,
+        'Full Name': student.fullName || student.name || '',
         'Mobile Number': student.mobileNumber,
         'Email': student.email,
         'Date of Birth': student.dateOfBirth || '',
@@ -775,8 +788,8 @@ router.get('/students/export/excel', isAdmin, async (req, res) => {
         'State': student.state || '',
         'Total Workshops': student.totalWorkshops || 0,
         'Created At': student.createdAt
-      };
-    });
+      });
+    }
     
     const ws = XLSX.utils.json_to_sheet(studentsWithDetails);
     const wb = XLSX.utils.book_new();
@@ -798,7 +811,7 @@ router.get('/students/export/excel', isAdmin, async (req, res) => {
 // Get all agents
 router.get('/agents', isAdmin, async (req, res) => {
   try {
-    const agents = Agent.find();
+    const agents = await Agent.find();
     // Remove password from response
     const agentsWithoutPassword = agents.map(({ password, ...agent }) => agent);
     res.json({ success: true, agents: agentsWithoutPassword });
@@ -811,7 +824,7 @@ router.get('/agents', isAdmin, async (req, res) => {
 // Get agent by ID with statistics
 router.get('/agents/:id', isAdmin, async (req, res) => {
   try {
-    const agent = Agent.findById(req.params.id);
+    const agent = await Agent.findById(req.params.id);
     if (!agent) {
       return res.status(404).json({ success: false, message: 'Agent not found' });
     }
@@ -819,8 +832,7 @@ router.get('/agents/:id', isAdmin, async (req, res) => {
     const { password, ...agentWithoutPassword } = agent;
     
     // Get agent's registration stats
-    const { Registration: RegModel } = require('../localdb');
-    const registrations = RegModel.find({ registeredBy: agent.username });
+    const registrations = await Registration.find({ registeredBy: agent.username });
     
     res.json({
       success: true,
@@ -842,7 +854,7 @@ router.post('/agents', isAdmin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
     
-    const newAgent = Agent.create({
+    const newAgent = await Agent.create({
       username,
       password, // In production, hash this
       fullName: fullName || username,
@@ -872,7 +884,7 @@ router.put('/agents/:id', isAdmin, async (req, res) => {
       updates.password = password; // In production, hash this
     }
     
-    const updated = Agent.update(req.params.id, updates);
+    const updated = await Agent.update(req.params.id, updates);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Agent not found' });
     }
@@ -889,7 +901,7 @@ router.put('/agents/:id', isAdmin, async (req, res) => {
 // Delete agent
 router.delete('/agents/:id', isAdmin, async (req, res) => {
   try {
-    Agent.deleteById(req.params.id);
+    await Agent.deleteById(req.params.id);
     res.json({ success: true, message: 'Agent deleted successfully' });
   } catch (error) {
     console.error('Error deleting agent:', error);
@@ -900,12 +912,12 @@ router.delete('/agents/:id', isAdmin, async (req, res) => {
 // Toggle agent status (active/inactive)
 router.patch('/agents/:id/toggle-status', isAdmin, async (req, res) => {
   try {
-    const agent = Agent.findById(req.params.id);
+    const agent = await Agent.findById(req.params.id);
     if (!agent) {
       return res.status(404).json({ success: false, message: 'Agent not found' });
     }
     
-    const updated = Agent.update(req.params.id, {
+    const updated = await Agent.update(req.params.id, {
       status: agent.status === 'active' ? 'inactive' : 'active'
     });
     
@@ -937,7 +949,7 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
     const errors = [];
 
     // OPTIMIZATION: Load all students ONCE and create lookup Sets
-    const allStudents = Student.findAll();
+    const allStudents = await Student.findAll();
     const existingUIDs = new Set(allStudents.filter(s => s.mncUID).map(s => s.mncUID));
     const existingRegs = new Set(allStudents.filter(s => s.mncRegistrationNumber).map(s => s.mncRegistrationNumber));
     const existingMobiles = new Set(allStudents.filter(s => s.mobileNumber).map(s => s.mobileNumber));
@@ -1054,7 +1066,7 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
 
     // OPTIMIZATION: Bulk create all students at once
     if (newStudents.length > 0) {
-      Student.bulkCreate(newStudents);
+      await Student.bulkCreate(newStudents);
     }
 
     res.json({
@@ -1091,7 +1103,7 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
 router.get('/students', isAuthenticated, async (req, res) => {
   try {
     const { page = 1, limit = 50, search = '' } = req.query;
-    let students = Student.find({});
+    let students = await Student.find({});
 
     // Search filter
     if (search) {
@@ -1132,14 +1144,11 @@ router.get('/students', isAuthenticated, async (req, res) => {
 // Delete all students (for reset)
 router.delete('/students/all', isAdmin, async (req, res) => {
   try {
-    const students = Student.find({});
+    const students = await Student.find({});
     const count = students.length;
     
-    // Clear students file
-    fs.writeFileSync(
-      path.join(__dirname, '..', 'database', 'students.json'),
-      JSON.stringify([], null, 2)
-    );
+    // Delete all students from database
+    await Student.deleteAll();
     
     res.json({
       success: true,
