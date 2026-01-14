@@ -18,8 +18,8 @@ const ATTENDANCE_FILE = path.join(DB_DIR, 'attendance.json');
 const STUDENTS_FILE = path.join(DB_DIR, 'students.json');
 const AGENTS_FILE = path.join(DB_DIR, 'agents.json');
 
-// Initialize database
-function initDatabase() {
+// Initialize database (async wrapper for compatibility with MySQL version)
+async function initDatabase() {
   if (!fs.existsSync(DB_DIR)) {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
@@ -51,6 +51,8 @@ function initDatabase() {
   if (!fs.existsSync(AGENTS_FILE)) {
     fs.writeFileSync(AGENTS_FILE, JSON.stringify([], null, 2));
   }
+  
+  return true;
 }
 
 // Read data from file

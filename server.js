@@ -6,8 +6,17 @@ const path = require('path');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 
-// Use local database instead of MongoDB
-const { initDatabase } = require('./localdb');
+// Use MySQL database for production, local JSON for development
+const useMySQL = process.env.USE_MYSQL === 'true';
+let db;
+if (useMySQL) {
+  db = require('./database/mysql-db');
+  console.log('Using MySQL Database');
+} else {
+  db = require('./localdb');
+  console.log('Using Local JSON Database');
+}
+const { initDatabase } = db;
 
 // Import routes
 const registrationRoutes = require('./routes/registration');
@@ -69,8 +78,15 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // Initialize database
-initDatabase();
-console.log('✅ Connected to Local File Database');
+(async () => {
+  try {
+    await initDatabase();
+    console.log('✅ Database initialized successfully');
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error.message);
+    process.exit(1);
+  }
+})();
 
 // Mount API Routes
 app.use('/api/registration', registrationRoutes);
