@@ -583,8 +583,9 @@
 
             filteredStudents = allStudents.filter(student => {
                 // Search filter
+                const studentName = student.fullName && student.fullName !== 'null' ? student.fullName : '';
                 const matchesSearch = !searchTerm || 
-                    student.fullName.toLowerCase().includes(searchTerm) ||
+                    studentName.toLowerCase().includes(searchTerm) ||
                     student.mobileNumber.includes(searchTerm) ||
                     (student.mncUID && student.mncUID.toLowerCase().includes(searchTerm)) ||
                     (student.mncRegistrationNumber && student.mncRegistrationNumber.toLowerCase().includes(searchTerm)) ||
@@ -626,11 +627,13 @@
             const pageStudents = filteredStudents.slice(startIdx, endIdx);
 
             // Render table rows
-            tableBody.innerHTML = pageStudents.map(student => `
+            tableBody.innerHTML = pageStudents.map(student => {
+                const displayName = student.fullName && student.fullName !== 'null' ? student.fullName : '-';
+                return `
                 <tr onclick="viewStudent('${student._id}')">
                     <td><span class="student-id">${student._id}</span></td>
                     <td><span class="student-id" style="color: #e74c3c;">${student.mncUID || '-'}</span></td>
-                    <td>${student.fullName}</td>
+                    <td>${displayName}</td>
                     <td>${student.mobileNumber}</td>
                     <td><span style="font-family: monospace; color: #16a085;">${student.mncRegistrationNumber || '-'}</span></td>
                     <td>${student.city || '-'}</td>
@@ -643,7 +646,8 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
 
             // Update pagination
             if (totalPages > 1) {
@@ -690,7 +694,7 @@
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Full Name</div>
-                                <div class="detail-value">${student.fullName}</div>
+                                <div class="detail-value">${student.fullName && student.fullName !== 'null' ? student.fullName : '-'}</div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">Mobile Number</div>
