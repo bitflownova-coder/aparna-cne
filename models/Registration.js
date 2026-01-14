@@ -18,7 +18,12 @@ const Registration = {
   countDocuments: (query = {}) => DB.countByWorkshop ? DB.countByWorkshop(query.workshopId) : 0,
   findByFormNumber: (formNumber) => DB.findByFormNumber(formNumber),
   findByMobile: (mobile) => DB.findByMobile(mobile),
-  findByWorkshop: (workshopId) => DB.findByWorkshop(workshopId)
+  findByWorkshop: (workshopId) => DB.findByWorkshop(workshopId),
+  getRegistrationCount: (workshopId) => DB.getRegistrationCount ? DB.getRegistrationCount(workshopId) : 0,
+  isRegistrationFull: () => DB.isRegistrationFull ? DB.isRegistrationFull() : false,
+  getNextFormNumber: (workshopId) => DB.getNextFormNumber ? DB.getNextFormNumber(workshopId) : `WS${Date.now()}`,
+  update: (id, updates) => DB.update ? DB.update(id, updates) : DB.findByIdAndUpdate(id, updates),
+  deleteById: (id) => DB.deleteById ? DB.deleteById(id) : DB.findByIdAndDelete(id)
 };
 
 module.exports = Registration;

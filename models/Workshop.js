@@ -21,7 +21,11 @@ const Workshop = {
   getActiveWorkshops: () => DB.getActiveWorkshops(),
   getUpcomingWorkshops: () => DB.getUpcomingWorkshops(),
   getLatestWorkshop: () => DB.getLatestWorkshop(),
-  incrementRegistrationCount: (id) => DB.incrementRegistrationCount(id)
+  incrementRegistrationCount: (id) => DB.incrementRegistrationCount(id),
+  
+  // Alias methods
+  update: (id, updates) => DB.update ? DB.update(id, updates) : DB.findByIdAndUpdate(id, updates),
+  deleteById: (id) => DB.deleteById ? DB.deleteById(id) : DB.findByIdAndDelete(id)
 };
 
 module.exports = Workshop;

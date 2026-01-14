@@ -669,6 +669,19 @@ const Registration = {
   isRegistrationFull: async () => {
     const count = await Registration.getRegistrationCount();
     return count >= 500; // Default max
+  },
+  
+  getNextFormNumber: async (workshopId) => {
+    const pool = await getPool();
+    const [rows] = await pool.query(
+      'SELECT COUNT(*) as count FROM registrations WHERE workshopId = ?',
+      [workshopId]
+    );
+    const count = rows[0].count + 1;
+    // Format: WS{workshopNumber}-{registrationNumber}
+    // Extract workshop number from workshopId (e.g., WRK000001 -> 1)
+    const wsNum = workshopId ? workshopId.replace(/\D/g, '') : '0';
+    return `WS${wsNum}-${String(count).padStart(4, '0')}`;
   }
 };
 
