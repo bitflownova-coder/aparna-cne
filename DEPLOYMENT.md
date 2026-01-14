@@ -21,6 +21,27 @@ This system uses **MySQL database** on Hostinger. The `.env` file contains datab
 
 ## ✅ SAFE Deployment Method (Recommended)
 
+### 🎯 EASIEST: Use the Deploy Script
+```bash
+# 1. SSH to server
+ssh -p 65002 u984810592@72.60.19.158
+
+# 2. Run deploy script (handles everything automatically!)
+cd ~/domains/aparnaine.com/public_html
+./deploy.sh
+```
+
+The `deploy.sh` script automatically:
+- ✅ Backs up .env before pull
+- ✅ Pulls latest code
+- ✅ Restores .env after pull
+- ✅ Restarts the server
+- ✅ Verifies everything works
+
+---
+
+### Manual Method (If Script Doesn't Exist)
+
 ### Step 1: Push Changes from Local Machine
 ```powershell
 # On your local Windows machine
