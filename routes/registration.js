@@ -378,6 +378,58 @@ router.post('/download', async (req, res) => {
   }
 });
 
+// Delete registration by ID (public endpoint)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const registration = await Registration.findById(id);
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      });
+    }
+
+    // Store workshopId before deletion
+    const workshopId = registration.workshopId;
+
+    // Delete associated payment screenshot if exists
+    const fs = require('fs');
+    if (registration.paymentScreenshot) {
+      const filePath = path.join(__dirname, '..', 'uploads', 'payments', registration.paymentScreenshot);
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, () => {});
+      }
+    }
+
+    // Delete the registration
+    await Registration.deleteById(id);
+
+    // Decrement workshop registration count if applicable
+    if (workshopId) {
+      const workshop = await Workshop.findById(workshopId);
+      if (workshop && workshop.currentRegistrations > 0) {
+        await Workshop.updateById(workshopId, {
+          currentRegistrations: workshop.currentRegistrations - 1
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Registration deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting registration:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting registration'
+    });
+  }
+});
+
 // Helper to determine next form number with cap
 async function getNextFormNumber() {
   const next = await Registration.getNextFormNumber();

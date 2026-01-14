@@ -909,8 +909,8 @@ router.delete('/agents/:id', isAdmin, async (req, res) => {
   }
 });
 
-// Toggle agent status (active/inactive)
-router.patch('/agents/:id/toggle-status', isAdmin, async (req, res) => {
+// Toggle agent status (active/inactive) - Support both PATCH and PUT
+const toggleAgentStatus = async (req, res) => {
   try {
     const agent = await Agent.findById(req.params.id);
     if (!agent) {
@@ -928,7 +928,10 @@ router.patch('/agents/:id/toggle-status', isAdmin, async (req, res) => {
     console.error('Error toggling agent status:', error);
     res.status(500).json({ success: false, message: 'Error toggling agent status' });
   }
-});
+};
+
+router.patch('/agents/:id/toggle-status', isAdmin, toggleAgentStatus);
+router.put('/agents/:id/toggle-status', isAdmin, toggleAgentStatus);
 
 // ==================== BULK STUDENT IMPORT ====================
 

@@ -200,11 +200,17 @@ function showAllRegistrations(registrations) {
                     </div>
                 </div>
                 
-                <button class="btn btn-primary" ${remainingDownloads <= 0 ? 'disabled' : ''} 
-                    onclick="downloadRegistration(${index})" 
-                    style="width: 100%; margin-top: 16px; ${remainingDownloads <= 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
-                    ${remainingDownloads > 0 ? '📄 Download PDF' : '❌ Download Limit Reached'}
-                </button>
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button class="btn btn-primary" ${remainingDownloads <= 0 ? 'disabled' : ''} 
+                        onclick="downloadRegistration(${index})" 
+                        style="flex: 1; ${remainingDownloads <= 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
+                        ${remainingDownloads > 0 ? '📄 Download PDF' : '❌ Download Limit Reached'}
+                    </button>
+                    <button class="btn" onclick="deleteRegistration('${data._id}')" 
+                        style="background: #ef4444; color: white; padding: 10px 16px;">
+                        🗑️ Delete
+                    </button>
+                </div>
             </div>
         `;
     });
@@ -555,4 +561,46 @@ function showAlert(message, type) {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Delete registration
+async function deleteRegistration(registrationId) {
+    if (!confirm('Are you sure you want to delete this registration? This action cannot be undone.')) {
+        return;
+    }
+
+    // Double confirmation
+    const confirmText = prompt('Please type "DELETE" to confirm deletion:');
+    if (confirmText !== 'DELETE') {
+        showAlert('Deletion cancelled', 'info');
+        return;
+    }
+
+    showSpinner(true);
+
+    try {
+        const response = await fetch(`/api/registration/${registrationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        showSpinner(false);
+
+        if (data.success) {
+            showAlert('Registration deleted successfully', 'success');
+            // Go back to lookup form
+            setTimeout(() => {
+                showLookupForm();
+            }, 2000);
+        } else {
+            showAlert(data.message || 'Failed to delete registration', 'error');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        showSpinner(false);
+        showAlert('Failed to delete registration. Please try again.', 'error');
+    }
 }

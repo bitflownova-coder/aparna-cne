@@ -160,29 +160,39 @@ async function initDatabase() {
       registrationId VARCHAR(50),
       studentId VARCHAR(50),
       studentName VARCHAR(255),
+      mncUID VARCHAR(100),
+      registrationNumber VARCHAR(100),
       mobileNumber VARCHAR(20),
       formNumber VARCHAR(50),
       
       checkInTime DATETIME,
       checkOutTime DATETIME,
+      markedAt DATETIME,
       status ENUM('present', 'absent', 'late') DEFAULT 'present',
       
       markedBy VARCHAR(100),
       markedByType ENUM('scan', 'manual') DEFAULT 'scan',
+      ipAddress VARCHAR(100),
+      deviceFingerprint TEXT,
+      userAgent TEXT,
       
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       
       INDEX idx_workshopId (workshopId),
       INDEX idx_registrationId (registrationId),
-      INDEX idx_studentId (studentId)
+      INDEX idx_studentId (studentId),
+      INDEX idx_mncUID (mncUID)
     )`,
     
     // Agents table
     `CREATE TABLE IF NOT EXISTS agents (
       _id VARCHAR(50) PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      code VARCHAR(50) UNIQUE,
+      username VARCHAR(100) UNIQUE,
+      password VARCHAR(255),
+      fullName VARCHAR(255),
+      name VARCHAR(255),
+      code VARCHAR(50),
       mobileNumber VARCHAR(20),
       email VARCHAR(255),
       status ENUM('active', 'inactive') DEFAULT 'active',
@@ -815,14 +825,27 @@ const Agent = {
     return Agent.findOne({ code: code });
   },
   
+  findByUsername: async (username) => {
+    return Agent.findOne({ username: username });
+  },
+  
   create: async (data) => {
     const pool = await getPool();
     const id = 'AGT' + String(await generateId('agent')).padStart(6, '0');
+    
+    // Check if username already exists
+    if (data.username) {
+      const existing = await Agent.findByUsername(data.username);
+      if (existing) {
+        throw new Error('Username already exists');
+      }
+    }
     
     const agent = {
       _id: id,
       ...data,
       totalRegistrations: 0,
+      status: data.status || 'active',
       createdAt: new Date(),
       updatedAt: new Date()
     };
