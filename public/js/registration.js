@@ -386,9 +386,22 @@ function selectWorkshop(workshopId) {
 
 // Update Payment QR Code display
 function updatePaymentQRDisplay(workshop) {
+    console.log('updatePaymentQRDisplay called with:', {
+        id: workshop._id,
+        title: workshop.title,
+        fee: workshop.fee,
+        qrCodeImage: workshop.qrCodeImage
+    });
+    
     const qrDisplay = document.getElementById('qrCodeDisplay');
     const feeDisplay = document.getElementById('displayFee');
-    const workshopFee = workshop.fee || 0;
+    
+    // Handle fee - check for NaN, undefined, null, etc.
+    let workshopFee = 0;
+    if (workshop.fee !== undefined && workshop.fee !== null && !isNaN(workshop.fee)) {
+        workshopFee = Number(workshop.fee);
+    }
+    console.log('Parsed workshopFee:', workshopFee);
     
     // Update fee display
     if (feeDisplay) {
