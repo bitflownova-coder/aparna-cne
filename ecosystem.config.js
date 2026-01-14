@@ -14,8 +14,13 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
-        // IMPORTANT: Store database OUTSIDE git folder to prevent data loss on git pull
-        DATA_DIR: '/home/aparna-data'
+        // MySQL Database Configuration
+        DB_TYPE: 'mysql',
+        DB_HOST: '127.0.0.1',
+        DB_USER: 'u984810592_aparna_admin',
+        DB_PASSWORD: 'sCARFACE@2003?.',
+        DB_NAME: 'u984810592_aparna_cne',
+        USE_MYSQL: 'true'
       },
       // Error and output logs
       error_file: './logs/err.log',
