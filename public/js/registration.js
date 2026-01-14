@@ -369,12 +369,53 @@ function selectWorkshop(workshopId) {
         formTitle.innerHTML = `📝 Registering for: <span style="color:#fbbf24">${escapeHtml(workshop.title)}</span>`;
     }
 
+    // Update Payment QR Code display
+    updatePaymentQRDisplay(workshop);
+
     // Show form with animation
     const section = document.getElementById('formSection');
     section.classList.add('show');
     
     // Smooth scroll
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Update Payment QR Code display
+function updatePaymentQRDisplay(workshop) {
+    const qrDisplay = document.getElementById('qrCodeDisplay');
+    const feeDisplay = document.getElementById('displayFee');
+    
+    // Update fee display
+    if (feeDisplay) {
+        feeDisplay.textContent = `₹${workshop.fee}`;
+    }
+    
+    // Update QR code image
+    if (qrDisplay) {
+        if (workshop.qrCodeImage) {
+            qrDisplay.innerHTML = `
+                <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <img src="/uploads/qr-codes/${workshop.qrCodeImage}" alt="Payment QR Code" 
+                         style="max-width: 200px; max-height: 200px; border-radius: 8px;"
+                         onerror="this.parentElement.innerHTML='<p style=\\'color: #dc2626; padding: 20px;\\'>QR code not available. Please contact admin.</p>'">
+                </div>
+                <p style="color: #166534; font-weight: 600; margin-top: 10px; font-size: 1rem;">
+                    💰 Amount: ₹${workshop.fee}
+                </p>
+            `;
+        } else {
+            qrDisplay.innerHTML = `
+                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border: 1px solid #fecaca;">
+                    <p style="color: #dc2626; margin: 0; font-weight: 500;">
+                        ⚠️ Payment QR code not uploaded yet.
+                    </p>
+                    <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 0.85rem;">
+                        Please contact the organizer for payment details.
+                    </p>
+                </div>
+            `;
+        }
+    }
 }
 
 // Handle form submission

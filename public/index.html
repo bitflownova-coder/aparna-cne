@@ -699,18 +699,44 @@
                         <!-- Payment Details -->
                         <div class="form-divider"><span>Payment Verification</span></div>
 
-                        <div class="form-grid-2">
-                            <div class="modern-input-group">
-                                <label for="paymentUTR" class="modern-label">Payment UTR / Ref Number <span style="color:var(--danger)">*</span></label>
-                                <input type="text" id="paymentUTR" name="paymentUTR" class="modern-input" placeholder="12-digit transaction ID" required>
+                        <!-- Payment QR Code Section -->
+                        <div id="paymentQRSection" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #86efac; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;">
+                            <h4 style="color: #166534; margin: 0 0 1rem 0; font-size: 1.1rem;">
+                                💳 Step 1: Make Payment
+                            </h4>
+                            <div id="qrCodeDisplay" style="margin-bottom: 1rem;">
+                                <!-- QR Code will be inserted here -->
+                                <p style="color: #6b7280; font-size: 0.9rem;">Loading payment details...</p>
                             </div>
+                            <div id="paymentInstructions" style="background: white; border-radius: 8px; padding: 1rem; text-align: left; font-size: 0.9rem; color: #374151;">
+                                <p style="margin: 0 0 0.5rem 0;"><strong>📱 How to Pay:</strong></p>
+                                <ol style="margin: 0; padding-left: 1.2rem;">
+                                    <li>Scan the QR code using any UPI app (GPay, PhonePe, Paytm, etc.)</li>
+                                    <li>Pay the workshop fee: <strong id="displayFee">₹0</strong></li>
+                                    <li>Save the payment screenshot</li>
+                                    <li>Note down the UTR/Transaction ID (12 digits)</li>
+                                </ol>
+                            </div>
+                        </div>
 
-                            <div class="modern-input-group">
-                                <label class="modern-label">Payment Screenshot <span style="color:var(--danger)">*</span></label>
-                                <div class="upload-zone" onclick="document.getElementById('paymentScreenshot').click()" style="padding: 0.8rem; background: white; border-color: #e5e7eb;">
-                                    <p id="fileNameDisplay" style="margin: 0; font-size: 0.95rem;">📎 Click to upload image</p>
+                        <!-- Step 2: Enter Payment Details -->
+                        <div style="background: #eff6ff; border: 2px solid #93c5fd; border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
+                            <h4 style="color: #1e40af; margin: 0 0 1rem 0; font-size: 1.1rem;">
+                                📝 Step 2: Enter Payment Details
+                            </h4>
+                            <div class="form-grid-2">
+                                <div class="modern-input-group">
+                                    <label for="paymentUTR" class="modern-label">Payment UTR / Ref Number <span style="color:var(--danger)">*</span></label>
+                                    <input type="text" id="paymentUTR" name="paymentUTR" class="modern-input" placeholder="12-digit transaction ID" required>
                                 </div>
-                                <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*" style="display:none" required onchange="updateFileName(this)">
+
+                                <div class="modern-input-group">
+                                    <label class="modern-label">Payment Screenshot <span style="color:var(--danger)">*</span></label>
+                                    <div class="upload-zone" onclick="document.getElementById('paymentScreenshot').click()" style="padding: 0.8rem; background: white; border-color: #e5e7eb;">
+                                        <p id="fileNameDisplay" style="margin: 0; font-size: 0.95rem;">📎 Click to upload image</p>
+                                    </div>
+                                    <input type="file" id="paymentScreenshot" name="paymentScreenshot" accept="image/*" style="display:none" required onchange="updateFileName(this)">
+                                </div>
                             </div>
                         </div>
 
