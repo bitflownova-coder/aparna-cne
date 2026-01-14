@@ -57,12 +57,12 @@ app.use('/api/', limiter);
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'SaiCareGroup_CNE_Secret_Key_2025_Secure',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   cookie: {
-    secure: false, // Set to false for HTTP
+    secure: false, // Keep false - Passenger handles HTTPS termination
     httpOnly: true,
-    maxAge: 2 * 60 * 60 * 1000, // 2 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax'
   },
   rolling: true // Reset maxAge on every response
