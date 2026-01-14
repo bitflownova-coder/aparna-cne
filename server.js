@@ -93,6 +93,7 @@ app.get('/admin-dashboard', (req, res) => sendPage('admin-dashboard.html', res))
 app.get('/admin-workshops', (req, res) => sendPage('admin-workshops.html', res));
 app.get('/admin-users', (req, res) => sendPage('admin-users.html', res));
 app.get('/admin-bulk-upload', (req, res) => sendPage('admin-bulk-upload.html', res));
+app.get('/admin-bulk-students', (req, res) => sendPage('admin-bulk-students.html', res));
 app.get('/admin-students', (req, res) => sendPage('admin-students.html', res));
 app.get('/admin-agents', (req, res) => sendPage('admin-agents.html', res));
 app.get('/attendance-login', (req, res) => sendPage('attendance-login.html', res));
