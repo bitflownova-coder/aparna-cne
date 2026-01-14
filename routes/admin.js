@@ -920,7 +920,7 @@ router.patch('/agents/:id/toggle-status', isAdmin, async (req, res) => {
 
 // ==================== BULK STUDENT IMPORT ====================
 
-// Bulk import students from multiple Excel files
+// Bulk import students from multiple Excel files (OPTIMIZED)
 router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -935,6 +935,16 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
     let totalErrors = 0;
     const fileResults = [];
     const errors = [];
+
+    // OPTIMIZATION: Load all students ONCE and create lookup Sets
+    const allStudents = Student.findAll();
+    const existingUIDs = new Set(allStudents.filter(s => s.mncUID).map(s => s.mncUID));
+    const existingRegs = new Set(allStudents.filter(s => s.mncRegistrationNumber).map(s => s.mncRegistrationNumber));
+    const existingMobiles = new Set(allStudents.filter(s => s.mobileNumber).map(s => s.mobileNumber));
+    const existingEmails = new Set(allStudents.filter(s => s.email).map(s => s.email.toLowerCase()));
+
+    // OPTIMIZATION: Collect all new students first, then bulk write
+    const newStudents = [];
 
     for (const file of req.files) {
       try {
@@ -951,15 +961,33 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
         for (const row of data) {
           try {
             // Get column values (handle different possible column names)
-            const studentUniqueId = row['Student Unique ID'] || row['StudentUniqueID'] || row['student_unique_id'] || row['MNC UID'] || '';
-            const registrationNumber = row['Registration Number'] || row['RegistrationNumber'] || row['registration_number'] || row['MNC Registration Number'] || '';
-            const name = row['Name'] || row['name'] || row['Full Name'] || row['FullName'] || '';
+            const studentUniqueId = String(row['Student Unique ID'] || row['StudentUniqueID'] || row['student_unique_id'] || row['MNC UID'] || '').trim();
+            const registrationNumber = String(row['Registration Number'] || row['RegistrationNumber'] || row['registration_number'] || row['MNC Registration Number'] || '').trim();
+            const name = String(row['Name'] || row['name'] || row['Full Name'] || row['FullName'] || '').trim();
             const mobile = String(row['Mobile No'] || row['MobileNo'] || row['mobile_no'] || row['Mobile'] || row['Phone'] || '').replace(/[^0-9]/g, '');
-            const email = row['Email'] || row['email'] || row['E-mail'] || '';
+            const email = String(row['Email'] || row['email'] || row['E-mail'] || '').trim().toLowerCase();
 
             // Skip if no name or no identifier
             if (!name || (!studentUniqueId && !registrationNumber && !mobile)) {
               fileErrors++;
+              continue;
+            }
+
+            // OPTIMIZATION: Use Set lookups instead of DB queries (O(1) vs O(n))
+            if (studentUniqueId && existingUIDs.has(studentUniqueId)) {
+              fileSkipped++;
+              continue;
+            }
+            if (registrationNumber && existingRegs.has(registrationNumber)) {
+              fileSkipped++;
+              continue;
+            }
+            if (mobile && existingMobiles.has(mobile)) {
+              fileSkipped++;
+              continue;
+            }
+            if (email && existingEmails.has(email)) {
+              fileSkipped++;
               continue;
             }
 
@@ -974,27 +1002,22 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
               mncRegNumber = registrationNumber;
             }
 
-            // Check if student already exists
-            const existingByUid = studentUniqueId ? Student.findByMncUID(studentUniqueId) : null;
-            const existingByReg = registrationNumber ? Student.findByMncRegistrationNumber(registrationNumber) : null;
-            const existingByMobile = mobile ? Student.findByMobile(mobile) : null;
-            const existingByEmail = email ? Student.findByEmail(email) : null;
-
-            if (existingByUid || existingByReg || existingByMobile || existingByEmail) {
-              fileSkipped++;
-              continue;
-            }
-
-            // Create new student
-            Student.create({
-              name: name.trim(),
-              mncUID: studentUniqueId ? studentUniqueId.trim() : null,
-              mncRegistrationNumber: registrationNumber ? registrationNumber.trim() : null,
+            // Add to batch for bulk insert
+            newStudents.push({
+              name: name,
+              mncUID: studentUniqueId || null,
+              mncRegistrationNumber: registrationNumber || null,
               mncRegPrefix: mncRegPrefix || null,
               mncRegNumber: mncRegNumber || null,
               mobileNumber: mobile || null,
-              email: email ? email.trim().toLowerCase() : null
+              email: email || null
             });
+
+            // Add to Sets to prevent duplicates within this import
+            if (studentUniqueId) existingUIDs.add(studentUniqueId);
+            if (registrationNumber) existingRegs.add(registrationNumber);
+            if (mobile) existingMobiles.add(mobile);
+            if (email) existingEmails.add(email);
 
             fileImported++;
           } catch (rowError) {
@@ -1027,6 +1050,11 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
         // Try to delete temp file
         try { fs.unlinkSync(file.path); } catch (e) {}
       }
+    }
+
+    // OPTIMIZATION: Bulk create all students at once
+    if (newStudents.length > 0) {
+      Student.bulkCreate(newStudents);
     }
 
     res.json({

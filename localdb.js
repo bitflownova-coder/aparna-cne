@@ -524,6 +524,37 @@ const Student = {
     return Student.update(id, {
       totalWorkshops: (student.totalWorkshops || 0) + 1
     });
+  },
+  
+  // Get all students (for bulk operations)
+  findAll: () => {
+    return readData(STUDENTS_FILE);
+  },
+  
+  // Bulk create students (FAST - single file write)
+  bulkCreate: (studentsArray) => {
+    const students = readData(STUDENTS_FILE);
+    const counters = readData(COUNTER_FILE);
+    
+    const newStudents = studentsArray.map(data => {
+      counters.studentId = (counters.studentId || 0) + 1;
+      return {
+        _id: 'STU' + String(counters.studentId).padStart(6, '0'),
+        ...data,
+        mncUID: data.mncUID || null,
+        mncRegistrationNumber: data.mncRegistrationNumber || null,
+        totalWorkshops: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    });
+    
+    // Single write for all students
+    students.push(...newStudents);
+    writeData(STUDENTS_FILE, students);
+    writeData(COUNTER_FILE, counters);
+    
+    return newStudents;
   }
 };
 
