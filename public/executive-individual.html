@@ -727,17 +727,57 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showAlert(result.message || 'Registration submitted successfully!', 'success');
+                    // Show detailed success message with form number
+                    const formNo = result.formNumber || '';
+                    const action = result.action === 'updated' ? 'updated' : 'created';
+                    let successMsg = `✅ Registration ${action} successfully!`;
+                    if (formNo) {
+                        successMsg += `\n📋 Form Number: ${formNo}`;
+                    }
+                    showAlert(successMsg, 'success');
+                    
+                    // Show a more visible success notification
+                    showSuccessModal(result);
+                    
                     setTimeout(() => {
                         resetForm();
                         window.scrollTo(0, 0);
-                    }, 2000);
+                    }, 3000);
                 } else {
                     showAlert(result.message || 'Registration failed', 'error');
                 }
             } catch (error) {
                 showAlert('Error submitting registration', 'error');
             }
+        }
+        
+        function showSuccessModal(result) {
+            // Create a success modal if it doesn't exist
+            let modal = document.getElementById('successModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'successModal';
+                modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+                modal.innerHTML = `
+                    <div style="background:white;padding:40px;border-radius:16px;text-align:center;max-width:400px;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size:60px;margin-bottom:20px;">✅</div>
+                        <h2 style="color:#065f46;margin-bottom:10px;">Registration Successful!</h2>
+                        <p style="font-size:18px;color:#374151;margin-bottom:15px;" id="successFormNo"></p>
+                        <p style="color:#6b7280;margin-bottom:20px;" id="successDetails"></p>
+                        <button onclick="closeSuccessModal()" style="padding:12px 30px;background:#10b981;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;">Continue</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            document.getElementById('successFormNo').textContent = result.formNumber ? `Form Number: ${result.formNumber}` : '';
+            document.getElementById('successDetails').textContent = result.action === 'updated' ? 'Existing registration was updated' : 'New registration created';
+            modal.style.display = 'flex';
+        }
+        
+        function closeSuccessModal() {
+            const modal = document.getElementById('successModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function resetForm() {
