@@ -9,6 +9,64 @@
     <link rel="stylesheet" href="/css/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .header h2 {
+                font-size: 0.95rem;
+            }
+
+            .form-card {
+                padding: 15px;
+            }
+
+            /* Quick lookup mobile */
+            #lookupCard > div:first-of-type {
+                padding: 15px !important;
+            }
+
+            #lookupCard > div:first-of-type > div:last-of-type {
+                flex-direction: column !important;
+            }
+
+            #lookupCard > div:first-of-type > div:last-of-type > div {
+                flex-direction: column !important;
+                width: 100%;
+            }
+
+            #quickLookupInput,
+            #quickLookupRegRoman,
+            #quickLookupRegNumber {
+                width: 100% !important;
+                flex: none !important;
+                min-width: auto !important;
+            }
+
+            input, select {
+                font-size: 16px !important;
+            }
+
+            /* Buttons */
+            #detailsCard > div:nth-last-child(4) {
+                flex-direction: column;
+            }
+
+            #detailsCard > div:nth-last-child(4) button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">

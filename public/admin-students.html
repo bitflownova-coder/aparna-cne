@@ -317,24 +317,86 @@
         }
 
         @media (max-width: 768px) {
-            .students-table-container {
-                overflow-x: auto;
+            body {
+                padding: 10px;
+            }
+
+            .student-header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .student-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .header-actions button {
+                width: 100%;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-card .value {
+                font-size: 1.5rem;
             }
 
             .search-filter-row {
                 flex-direction: column;
+                gap: 10px;
             }
 
             .filter-group {
                 min-width: 100%;
             }
 
-            .header-actions {
-                width: 100%;
+            .students-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 700px;
+                font-size: 0.8rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            input, select {
+                font-size: 16px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .student-header h1 {
+                font-size: 1.1rem;
             }
 
             .stats-cards {
                 grid-template-columns: 1fr;
+            }
+
+            .stat-card .value {
+                font-size: 1.3rem;
             }
         }
     </style>

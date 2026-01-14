@@ -434,29 +434,78 @@
 
         @media (max-width: 768px) {
             .portal-header {
-                padding: 20px;
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
             }
 
             .header-left, .header-right {
                 width: 100%;
                 justify-content: center;
-                margin-bottom: 10px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
             }
 
             .portal-header h1 {
-                font-size: 1.5rem;
+                font-size: 1.3rem;
             }
 
-            .qr-card {
-                padding: 30px 20px;
+            .portal-header p {
+                font-size: 0.8rem;
             }
 
-            .workshop-title {
-                font-size: 1.5rem;
+            .logout-btn {
+                width: 100%;
             }
 
             .main-content {
-                padding: 20px;
+                padding: 10px;
+                gap: 15px;
+            }
+
+            .control-panel {
+                padding: 15px;
+            }
+
+            .qr-card {
+                padding: 20px 15px;
+            }
+
+            .workshop-title {
+                font-size: 1.2rem;
+            }
+
+            .workshop-info {
+                padding: 12px;
+                font-size: 0.85rem;
+            }
+
+            select, input {
+                font-size: 16px !important;
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .portal-header h1 {
+                font-size: 1.1rem;
+            }
+
+            .logo-circle {
+                width: 40px;
+                height: 40px;
+            }
+
+            .qr-code-display {
+                padding: 15px;
+            }
+
+            .workshop-title {
+                font-size: 1rem;
             }
         }
     </style>

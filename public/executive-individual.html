@@ -266,13 +266,81 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                padding: 15px;
+            }
+
+            .header-title {
+                font-size: 1.2rem;
+            }
+
+            .btn-back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .autofill-card {
+                padding: 15px;
+            }
+
+            .autofill-form {
+                flex-direction: column !important;
+            }
+
+            .autofill-form > div {
+                flex-direction: column !important;
+            }
+
+            .autofill-input {
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            .form-card {
+                padding: 15px;
+            }
+
             .form-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .header {
-                flex-direction: column;
-                gap: 16px;
+
+            .form-group label {
+                font-size: 0.85rem;
+            }
+
+            input, select, textarea {
+                font-size: 16px !important;
+                padding: 10px 12px;
+            }
+
+            .btn-submit {
+                padding: 14px;
+                font-size: 1rem;
+            }
+
+            .section-header {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1rem;
+            }
+
+            .logo-small {
+                width: 40px;
+                height: 40px;
+            }
+
+            .autofill-title {
+                font-size: 1rem;
             }
         }
     </style>

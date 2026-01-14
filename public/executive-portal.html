@@ -208,13 +208,76 @@
         }
 
         @media (max-width: 768px) {
-            .options-grid {
-                grid-template-columns: 1fr;
+            body {
+                padding: 10px;
             }
-            
+
+            .header {
+                padding: 15px;
+            }
+
             .header-top {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .header-title {
+                font-size: 1.3rem;
+            }
+
+            .btn-logout {
+                width: 100%;
+            }
+
+            .welcome-section {
+                padding: 20px 15px;
+            }
+
+            .welcome-title {
+                font-size: 1.3rem;
+            }
+
+            .welcome-desc {
+                font-size: 0.9rem;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .option-card {
+                padding: 20px;
+            }
+
+            .option-title {
+                font-size: 1.1rem;
+            }
+
+            .stats-card {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1.1rem;
+            }
+
+            .logo-circle {
+                width: 50px;
+                height: 50px;
+            }
+
+            .option-icon {
+                font-size: 2rem;
             }
         }
     </style>

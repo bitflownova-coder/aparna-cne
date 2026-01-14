@@ -292,28 +292,110 @@
         }
 
         /* Mobile Optimization */
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             body {
-                padding: 12px;
-                padding-bottom: 60px;
+                padding: 10px;
+                padding-bottom: 70px;
+            }
+
+            .header {
+                padding: 15px;
+                border-radius: 12px;
             }
 
             .header h1 {
-                font-size: 1.25rem;
+                font-size: 1.2rem;
+            }
+
+            .header-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .header-actions .btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .stat-card h3 {
+                font-size: 0.75rem;
             }
 
             .stat-value {
                 font-size: 1.5rem;
             }
 
-            .btn {
+            .workshop-selector {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .registrations-container {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .registration-card {
+                padding: 12px;
+            }
+
+            .reg-name {
+                font-size: 1rem;
+            }
+
+            .reg-details {
+                font-size: 0.85rem;
+            }
+
+            .reg-actions {
+                flex-direction: column;
+            }
+
+            .reg-actions .btn-small {
                 width: 100%;
             }
 
             .alert {
-                left: 12px;
-                right: 12px;
+                left: 10px;
+                right: 10px;
                 max-width: none;
+                top: 10px;
+            }
+
+            select, input[type="text"] {
+                font-size: 16px !important;
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-value {
+                font-size: 1.3rem;
+            }
+
+            .reg-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
