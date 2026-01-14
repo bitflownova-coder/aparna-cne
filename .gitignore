@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Upload directories (keep structure, ignore contents)
+uploads/payments/*
+!uploads/payments/.gitkeep
+uploads/qr-codes/*
+!uploads/qr-codes/.gitkeep
+uploads/bulk/*
+!uploads/bulk/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor
+.vs/
+.vscode/
+*.swp
+*.swo
+
+# Backup files
+backups/
+*.bak
+
+# Student data imports
+student_data/listofcandidates/*
+!student_data/listofcandidates/.gitkeep
+
+# Logs folder
+logs/*
+!logs/.gitkeep

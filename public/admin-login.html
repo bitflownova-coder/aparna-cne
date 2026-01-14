@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - CNE</title>
+    <link rel="icon" href="/assest/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="/assest/logo.png">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>APARNA INSTITUTES</h1>
+            <h2>Admin Panel Login</h2>
+            <div class="nav-links">
+                <a href="/" class="nav-btn">Registration Form</a>
+                <a href="/view-registration" class="nav-btn">View Registration</a>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertMessage" class="alert"></div>
+
+        <!-- Login Form -->
+        <div class="form-card" style="max-width: 500px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="/assest/logo.png" alt="CNE Logo" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--primary-color);">Admin Login</h3>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                    Login
+                </button>
+            </form>
+
+            <div class="spinner" id="loadingSpinner"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            setupEventListeners();
+        });
+
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/admin/check-session');
+                const data = await response.json();
+                
+                if (data.success && data.isAdmin) {
+                    window.location.href = '/admin-dashboard';
+                }
+            } catch (error) {
+                console.error('Session check error:', error);
+            }
+        }
+
+        function setupEventListeners() {
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', handleLogin);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showAlert('Please enter both username and password', 'error');
+                return;
+            }
+
+            showSpinner(true);
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                showSpinner(false);
+
+                if (data.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/admin-dashboard';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || 'Invalid credentials', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showSpinner(false);
+                showAlert('Network error. Please try again.', 'error');
+            }
+        }
+
+        function showSpinner(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            if (show) {
+                spinner.classList.add('show');
+                loginBtn.disabled = true;
+            } else {
+                spinner.classList.remove('show');
+                loginBtn.disabled = false;
+            }
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alertMessage');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

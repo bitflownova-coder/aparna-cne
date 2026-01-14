@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records - Admin</title>
+    <link rel="icon" href="/assest/logo.png" type="image/png">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .attendance-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .attendance-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: var(--primary);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo-section">
+                <div class="logo-icon">🎓</div>
+                <div class="brand-name">
+                    <span class="brand-title">APARNA INSTITUTES</span>
+                    <span class="brand-subtitle">Attendance Management</span>
+                </div>
+            </div>
+            <nav class="header-nav">
+                <a href="/attendance-portal" class="nav-btn">📺 Attendance Portal</a>
+                <a href="/admin-dashboard" class="nav-btn">📊 Dashboard</a>
+                <a href="/admin-login" class="nav-btn">🔒 Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="attendance-container">
+        <div class="header-section">
+            <h1 style="color: var(--primary); margin-bottom: 10px;">📋 Attendance Records</h1>
+            <p style="color: var(--text-light);">View and manage workshop attendance</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAttendance">0</div>
+                    <div class="stat-label">Total Attendance</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <div class="stat-number" id="totalWorkshops">0</div>
+                    <div class="stat-label">Active Workshops</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <div class="stat-number" id="totalStudents">0</div>
+                    <div class="stat-label">Unique Students</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <div class="stat-number" id="todayAttendance">0</div>
+                    <div class="stat-label">Today's Attendance</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">🔍 Filter Records</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Workshop:</label>
+                    <select id="filterWorkshop">
+                        <option value="">All Workshops</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Search MNC UID:</label>
+                    <input type="text" id="filterMNC" placeholder="e.g., MNC2024001">
+                </div>
+                <div class="filter-group">
+                    <label>Search Name:</label>
+                    <input type="text" id="filterName" placeholder="Student name">
+                </div>
+                <div class="filter-group" style="flex: 0;">
+                    <button onclick="applyFilters()" class="btn-primary" style="width: 100%; white-space: nowrap;">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="attendance-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Attendance ID</th>
+                        <th>Workshop</th>
+                        <th>MNC UID</th>
+                        <th>Student Name</th>
+                        <th>Registration No.</th>
+                        <th>Marked At</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📋</div>
+                                <h3>Loading attendance records...</h3>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allAttendance = [];
+        let allWorkshops = [];
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadData();
+        });
+        
+        async function loadData() {
+            try {
+                // Load attendance
+                const attResponse = await fetch('/api/attendance/all');
+                const attResult = await attResponse.json();
+                
+                if (attResult.success) {
+                    allAttendance = attResult.data || [];
+                }
+                
+                // Load workshops
+                const wsResponse = await fetch('/api/workshop');
+                const wsResult = await wsResponse.json();
+                
+                if (wsResult.success) {
+                    allWorkshops = wsResult.data || [];
+                    populateWorkshopFilter();
+                }
+                
+                updateStats();
+                displayAttendance(allAttendance);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        function populateWorkshopFilter() {
+            const select = document.getElementById('filterWorkshop');
+            allWorkshops.forEach(ws => {
+                const option = document.createElement('option');
+                option.value = ws._id;
+                option.textContent = ws.title;
+                select.appendChild(option);
+            });
+        }
+        
+        function updateStats() {
+            document.getElementById('totalAttendance').textContent = allAttendance.length;
+            document.getElementById('totalWorkshops').textContent = new Set(allAttendance.map(a => a.workshopId)).size;
+            document.getElementById('totalStudents').textContent = new Set(allAttendance.map(a => a.mncUID)).size;
+            
+            const today = new Date().toDateString();
+            const todayCount = allAttendance.filter(a => new Date(a.markedAt).toDateString() === today).length;
+            document.getElementById('todayAttendance').textContent = todayCount;
+        }
+        
+        function displayAttendance(records) {
+            const tbody = document.getElementById('attendanceTableBody');
+            
+            if (records.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <h3>No attendance records found</h3>
+                                <p>Attendance records will appear here once students scan QR codes</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = records.map(record => {
+                const workshop = allWorkshops.find(w => w._id === record.workshopId);
+                const workshopName = workshop ? workshop.title : 'Unknown Workshop';
+                const markedDate = new Date(record.markedAt);
+                
+                return `
+                    <tr>
+                        <td><strong>${record._id}</strong></td>
+                        <td>${workshopName}</td>
+                        <td><code>${record.mncUID}</code></td>
+                        <td>${record.studentName}</td>
+                        <td>${record.registrationNumber || 'N/A'}</td>
+                        <td>${markedDate.toLocaleString()}</td>
+                        <td><span class="badge badge-success">✓ Present</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function applyFilters() {
+            const workshopFilter = document.getElementById('filterWorkshop').value;
+            const mncFilter = document.getElementById('filterMNC').value.toLowerCase();
+            const nameFilter = document.getElementById('filterName').value.toLowerCase();
+            
+            let filtered = allAttendance;
+            
+            if (workshopFilter) {
+                filtered = filtered.filter(a => a.workshopId === workshopFilter);
+            }
+            
+            if (mncFilter) {
+                filtered = filtered.filter(a => a.mncUID.toLowerCase().includes(mncFilter));
+            }
+            
+            if (nameFilter) {
+                filtered = filtered.filter(a => a.studentName.toLowerCase().includes(nameFilter));
+            }
+            
+            displayAttendance(filtered);
+        }
+    </script>
+</body>
+</html>
