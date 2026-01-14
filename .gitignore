@@ -40,6 +40,6 @@ student_data/listofcandidates/*
 logs/*
 !logs/.gitkeep
 
-# Database files (IMPORTANT: don't overwrite live data)
-database/*.json
-!database/.gitkeep
+# NOTE: Database files ARE tracked as templates
+# On server, run: git update-index --skip-worktree database/*.json
+# This prevents git pull from overwriting server data
