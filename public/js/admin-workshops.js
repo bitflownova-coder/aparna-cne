@@ -215,6 +215,11 @@ async function saveWorkshop(event) {
             return;
         }
         
+        const feeValue = document.getElementById('fee').value;
+        const creditsValue = document.getElementById('credits').value;
+        
+        console.log('Fee value:', feeValue, 'Credits value:', creditsValue);
+        
         const formData = new FormData();
         formData.append('title', document.getElementById('title').value.trim());
         formData.append('description', document.getElementById('description').value.trim());
@@ -222,8 +227,8 @@ async function saveWorkshop(event) {
         formData.append('dayOfWeek', document.getElementById('dayOfWeek').value);
         formData.append('venue', document.getElementById('venue').value.trim());
         formData.append('venueLink', document.getElementById('venueLink').value.trim());
-        formData.append('fee', document.getElementById('fee').value);
-        formData.append('credits', document.getElementById('credits').value);
+        formData.append('fee', feeValue);
+        formData.append('credits', creditsValue);
         formData.append('cneCpdNumber', cneCpdNumber);
         formData.append('maxSeats', document.getElementById('maxSeats').value);
         formData.append('status', document.getElementById('status').value);

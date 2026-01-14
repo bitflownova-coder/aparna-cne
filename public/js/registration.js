@@ -221,8 +221,10 @@ async function loadAllWorkshops() {
             const response = await fetch('/api/workshop');
             if (response.ok) {
                 const result = await response.json();
+                console.log('Workshop API response:', result);
                 if (result.success && Array.isArray(result.data)) {
                     workshops = result.data;
+                    console.log('Workshops loaded:', workshops.map(w => ({id: w._id, title: w.title, fee: w.fee, qrCodeImage: w.qrCodeImage})));
                 }
             } else {
                 errors.push(`Main list endpoint failed: ${response.status}`);
@@ -303,6 +305,8 @@ function displayWorkshopsList() {
         const seatsLeft = workshop.maxSeats - (workshop.currentRegistrations || 0); // Handle undefined count
         const percentFilled = Math.min(100, ((workshop.currentRegistrations || 0) / workshop.maxSeats) * 100);
         const isOpen = workshop.status === 'active' && seatsLeft > 0;
+        const workshopFee = workshop.fee || 0;
+        const workshopCredits = workshop.credits || 0;
         
         html += `
             <div class="workshop-item">
@@ -316,18 +320,18 @@ function displayWorkshopsList() {
                     <!-- Highlighted Venue Display -->
                     <div style="background: #eff6ff; color: #1e3a8a; padding: 10px 12px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.95rem; font-weight: 600; display: flex; align-items: start; gap: 8px; border: 1px solid #dbeafe;">
                         <span style="font-size: 1.1rem;">📍</span>
-                        <span style="line-height: 1.4;">${escapeHtml(workshop.venue)}</span>
+                        <span style="line-height: 1.4;">${escapeHtml(workshop.venue || 'TBA')}</span>
                     </div>
 
                     <h3 class="workshop-name">${escapeHtml(workshop.title)}</h3>
                     
                     <div class="info-row">
                         <span class="info-label">💰 Fee</span>
-                        <span class="info-value">₹${workshop.fee}</span>
+                        <span class="info-value">₹${workshopFee}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">🎓 Credits</span>
-                        <span class="info-value">${workshop.credits} Credits</span>
+                        <span class="info-value">${workshopCredits} Credits</span>
                     </div>
 
                     <div class="seats-bar-container">
@@ -384,10 +388,11 @@ function selectWorkshop(workshopId) {
 function updatePaymentQRDisplay(workshop) {
     const qrDisplay = document.getElementById('qrCodeDisplay');
     const feeDisplay = document.getElementById('displayFee');
+    const workshopFee = workshop.fee || 0;
     
     // Update fee display
     if (feeDisplay) {
-        feeDisplay.textContent = `₹${workshop.fee}`;
+        feeDisplay.textContent = `₹${workshopFee}`;
     }
     
     // Update QR code image
@@ -400,7 +405,7 @@ function updatePaymentQRDisplay(workshop) {
                          onerror="this.parentElement.innerHTML='<p style=\\'color: #dc2626; padding: 20px;\\'>QR code not available. Please contact admin.</p>'">
                 </div>
                 <p style="color: #166534; font-weight: 600; margin-top: 10px; font-size: 1rem;">
-                    💰 Amount: ₹${workshop.fee}
+                    💰 Amount: ₹${workshopFee}
                 </p>
             `;
         } else {

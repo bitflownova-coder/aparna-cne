@@ -131,8 +131,8 @@ router.post('/', isAuthenticated, upload.single('qrCodeImage'), async (req, res)
       dayOfWeek: req.body.dayOfWeek,
       venue: req.body.venue,
       venueLink: req.body.venueLink || '',
-      fee: parseFloat(req.body.fee),
-      credits: parseInt(req.body.credits),
+      fee: parseFloat(req.body.fee) || 0,
+      credits: parseInt(req.body.credits) || 0,
       cneCpdNumber: req.body.cneCpdNumber.trim(),
       maxSeats: parseInt(req.body.maxSeats) || 500,
       status: req.body.status || 'draft',
@@ -227,6 +227,10 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       if (req.body[field] !== undefined) {
         if (field === 'date' || field === 'registrationStartDate' || field === 'registrationEndDate') {
           updates[field] = req.body[field] ? new Date(req.body[field]).toISOString() : null;
+        } else if (field === 'fee') {
+          updates[field] = parseFloat(req.body[field]) || 0;
+        } else if (field === 'credits' || field === 'maxSeats') {
+          updates[field] = parseInt(req.body[field]) || 0;
         } else {
           updates[field] = req.body[field];
         }
