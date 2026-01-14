@@ -146,16 +146,7 @@ router.post('/', isAuthenticated, upload.single('qrCodeImage'), async (req, res)
       workshopData.qrCodeImage = req.file.filename;
     }
     
-    // Check if trying to activate multiple workshops
-    if (workshopData.status === 'active') {
-      const existingActive = Workshop.findOne({ status: 'active' });
-      if (existingActive) {
-        return res.status(400).json({
-          success: false,
-          message: 'Another workshop is already active. Please deactivate it first.'
-        });
-      }
-    }
+    // Multiple workshops can be active simultaneously
     
     const workshop = Workshop.create(workshopData);
     
@@ -206,17 +197,7 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       });
     }
     
-    // Check if trying to activate multiple workshops
-    if (req.body.status === 'active' && workshop.status !== 'active') {
-      const allWorkshops = Workshop.find({});
-      const existingActive = allWorkshops.find(w => w.status === 'active' && w._id !== workshop._id);
-      if (existingActive) {
-        return res.status(400).json({
-          success: false,
-          message: 'Another workshop is already active. Please deactivate it first.'
-        });
-      }
-    }
+    // Multiple workshops can be active simultaneously
     
     // Build updates object
     const updates = {};
@@ -314,17 +295,7 @@ router.put('/:id/status', isAuthenticated, async (req, res) => {
       });
     }
     
-    // Check if trying to activate multiple workshops
-    if (status === 'active' && workshop.status !== 'active') {
-      const allWorkshops = Workshop.find({});
-      const existingActive = allWorkshops.find(w => w.status === 'active' && w._id !== workshop._id);
-      if (existingActive) {
-        return res.status(400).json({
-          success: false,
-          message: 'Another workshop is already active. Please deactivate it first.'
-        });
-      }
-    }
+    // Multiple workshops can be active simultaneously
     
     const updatedWorkshop = Workshop.findByIdAndUpdate(req.params.id, { status });
     

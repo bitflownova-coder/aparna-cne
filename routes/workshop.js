@@ -29,7 +29,7 @@ router.get('/', (req, res) => {
   }
 });
 
-// Get active workshop
+// Get active workshop (legacy - returns first active)
 router.get('/active', (req, res) => {
   try {
     const workshop = Workshop.getActiveWorkshop();
@@ -52,6 +52,26 @@ router.get('/active', (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching active workshop'
+    });
+  }
+});
+
+// Get ALL active workshops (new - supports multiple active)
+router.get('/active-all', (req, res) => {
+  try {
+    const workshops = Workshop.getActiveWorkshops();
+    
+    res.json({
+      success: true,
+      data: workshops,
+      count: workshops.length
+    });
+    
+  } catch (error) {
+    console.error('Error fetching active workshops:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching active workshops'
     });
   }
 });

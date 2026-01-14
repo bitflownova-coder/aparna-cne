@@ -11,6 +11,7 @@ const Workshop = {
   
   // Static methods
   getActiveWorkshop: () => DB.getActiveWorkshop(),
+  getActiveWorkshops: () => DB.getActiveWorkshops(),
   getUpcomingWorkshops: () => DB.getUpcomingWorkshops(),
   getLatestWorkshop: () => DB.getLatestWorkshop()
 };
@@ -44,6 +45,10 @@ const WrappedWorkshop = {
   findById: (id) => addMethods(DB.findById(id)),
   create: (data) => addMethods(DB.create(data)),
   getActiveWorkshop: () => addMethods(DB.getActiveWorkshop()),
+  getActiveWorkshops: () => {
+    const workshops = DB.getActiveWorkshops();
+    return workshops.map(w => addMethods(w));
+  },
   getLatestWorkshop: () => addMethods(DB.getLatestWorkshop()),
   getUpcomingWorkshops: () => {
     const workshops = DB.getUpcomingWorkshops();

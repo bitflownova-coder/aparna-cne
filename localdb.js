@@ -266,6 +266,12 @@ const Workshop = {
     return Workshop.findOne({ status: 'active' });
   },
   
+  // Get ALL active workshops (for multiple active support)
+  getActiveWorkshops: () => {
+    const workshops = readData(WORKSHOPS_FILE);
+    return workshops.filter(w => w.status === 'active');
+  },
+  
   getUpcomingWorkshops: () => {
     const workshops = readData(WORKSHOPS_FILE);
     const now = new Date();

@@ -39,3 +39,7 @@ student_data/listofcandidates/*
 # Logs folder
 logs/*
 !logs/.gitkeep
+
+# Database files (IMPORTANT: don't overwrite live data)
+database/*.json
+!database/.gitkeep
