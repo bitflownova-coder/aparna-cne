@@ -14,7 +14,11 @@ const User = {
   findById: (id) => DB.findById(id),
   create: (data) => DB.create(data),
   findByIdAndUpdate: (id, updates) => DB.findByIdAndUpdate(id, updates),
-  findByIdAndDelete: (id) => DB.findByIdAndDelete(id)
+  findByIdAndDelete: (id) => DB.findByIdAndDelete(id),
+  
+  // Alias methods for compatibility
+  update: (id, updates) => DB.update ? DB.update(id, updates) : DB.findByIdAndUpdate(id, updates),
+  deleteById: (id) => DB.deleteById ? DB.deleteById(id) : DB.findByIdAndDelete(id)
 };
 
 module.exports = User;
