@@ -712,22 +712,25 @@ router.get('/students', isAdmin, async (req, res) => {
     const students = await Student.find();
     const registrations = await Registration.find({});
     
-    // Enrich students with names from their registrations if fullName is missing
+    // Enrich students with names - use fullName, or name, or get from registrations
     const enrichedStudents = students.map(student => {
-      // Check if fullName is null, undefined, empty, or literal string "null"
+      // First check if fullName exists and is valid
       if (!student.fullName || student.fullName === 'null' || student.fullName === '') {
-        // Find registrations for this student by mobile number or studentId
-        const studentRegs = registrations.filter(r => 
-          r.studentId === student._id || r.mobileNumber === student.mobileNumber
-        );
-        
-        // Get name from most recent registration
-        if (studentRegs.length > 0) {
-          // Sort by submittedAt descending
-          studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-          const latestReg = studentRegs[0];
-          if (latestReg.fullName && latestReg.fullName !== 'null') {
-            student.fullName = latestReg.fullName;
+        // Try using name field
+        if (student.name && student.name !== 'null' && student.name !== '') {
+          student.fullName = student.name;
+        } else {
+          // Fall back to registrations
+          const studentRegs = registrations.filter(r => 
+            r.studentId === student._id || r.mobileNumber === student.mobileNumber
+          );
+          
+          if (studentRegs.length > 0) {
+            studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+            const latestReg = studentRegs[0];
+            if (latestReg.fullName && latestReg.fullName !== 'null') {
+              student.fullName = latestReg.fullName;
+            }
           }
         }
       }
@@ -741,7 +744,7 @@ router.get('/students', isAdmin, async (req, res) => {
   }
 });
 
-// Fix students with null names by updating from registrations
+// Fix students with null names by updating from name field or registrations
 router.post('/students/fix-names', isAdmin, async (req, res) => {
   try {
     const students = await Student.find();
@@ -751,28 +754,37 @@ router.post('/students/fix-names', isAdmin, async (req, res) => {
     for (const student of students) {
       // Check if fullName is null, undefined, empty, or literal string "null"
       if (!student.fullName || student.fullName === 'null' || student.fullName === '') {
-        // Find registrations for this student by mobile number or studentId
-        const studentRegs = registrations.filter(r => 
-          r.studentId === student._id || r.mobileNumber === student.mobileNumber
-        );
+        let newName = null;
         
-        if (studentRegs.length > 0) {
-          // Sort by submittedAt descending to get most recent
-          studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-          const latestReg = studentRegs[0];
+        // First try using name field
+        if (student.name && student.name !== 'null' && student.name !== '') {
+          newName = student.name;
+        } else {
+          // Fall back to registrations
+          const studentRegs = registrations.filter(r => 
+            r.studentId === student._id || r.mobileNumber === student.mobileNumber
+          );
           
-          if (latestReg.fullName && latestReg.fullName !== 'null') {
-            // Update the student record in database
-            await Student.update(student._id, { fullName: latestReg.fullName });
-            fixedCount++;
+          if (studentRegs.length > 0) {
+            studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+            const latestReg = studentRegs[0];
+            if (latestReg.fullName && latestReg.fullName !== 'null') {
+              newName = latestReg.fullName;
+            }
           }
+        }
+        
+        if (newName) {
+          await Student.update(student._id, { fullName: newName });
+          fixedCount++;
         }
       }
     }
     
     res.json({ 
       success: true, 
-      message: `Fixed ${fixedCount} student records with names from registrations` 
+      message: `Fixed ${fixedCount} student records with names` 
+    }); 
     });
   } catch (error) {
     console.error('Error fixing student names:', error);
@@ -1083,6 +1095,7 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
             // Add to batch for bulk insert
             newStudents.push({
               name: name,
+              fullName: name,
               mncUID: studentUniqueId || null,
               mncRegistrationNumber: registrationNumber || null,
               mncRegPrefix: mncRegPrefix || null,
