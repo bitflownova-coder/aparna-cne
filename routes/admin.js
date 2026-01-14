@@ -684,16 +684,18 @@ router.delete('/registrations/:id', isAuthenticated, async (req, res) => {
       }
     }
 
-    await record.deleteOne();
+    // Use the correct delete method for our database wrapper
+    await Registration.deleteById(id);
 
     // Decrement workshop registration count
     if (workshopId) {
       const Workshop = require('../models/Workshop');
       const workshop = await Workshop.findById(workshopId);
       if (workshop && workshop.currentRegistrations > 0) {
-        workshop.currentRegistrations -= 1;
-        await workshop.save();
-        console.log(`Decremented registration count for workshop ${workshopId} to ${workshop.currentRegistrations}`);
+        await Workshop.update(workshopId, { 
+          currentRegistrations: workshop.currentRegistrations - 1 
+        });
+        console.log(`Decremented registration count for workshop ${workshopId} to ${workshop.currentRegistrations - 1}`);
       }
     }
 
