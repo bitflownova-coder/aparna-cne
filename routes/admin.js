@@ -918,4 +918,209 @@ router.patch('/agents/:id/toggle-status', isAdmin, async (req, res) => {
   }
 });
 
+// ==================== BULK STUDENT IMPORT ====================
+
+// Bulk import students from multiple Excel files
+router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No files uploaded'
+      });
+    }
+
+    let totalImported = 0;
+    let totalSkipped = 0;
+    let totalErrors = 0;
+    const fileResults = [];
+    const errors = [];
+
+    for (const file of req.files) {
+      try {
+        // Read Excel file
+        const workbook = XLSX.readFile(file.path);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        let fileImported = 0;
+        let fileSkipped = 0;
+        let fileErrors = 0;
+
+        for (const row of data) {
+          try {
+            // Get column values (handle different possible column names)
+            const studentUniqueId = row['Student Unique ID'] || row['StudentUniqueID'] || row['student_unique_id'] || row['MNC UID'] || '';
+            const registrationNumber = row['Registration Number'] || row['RegistrationNumber'] || row['registration_number'] || row['MNC Registration Number'] || '';
+            const name = row['Name'] || row['name'] || row['Full Name'] || row['FullName'] || '';
+            const mobile = String(row['Mobile No'] || row['MobileNo'] || row['mobile_no'] || row['Mobile'] || row['Phone'] || '').replace(/[^0-9]/g, '');
+            const email = row['Email'] || row['email'] || row['E-mail'] || '';
+
+            // Skip if no name or no identifier
+            if (!name || (!studentUniqueId && !registrationNumber && !mobile)) {
+              fileErrors++;
+              continue;
+            }
+
+            // Parse MNC Registration Number format (e.g., "XLVI-361" -> prefix: "XLVI", number: "361")
+            let mncRegPrefix = '';
+            let mncRegNumber = '';
+            if (registrationNumber && registrationNumber.includes('-')) {
+              const parts = registrationNumber.split('-');
+              mncRegPrefix = parts[0];
+              mncRegNumber = parts.slice(1).join('-');
+            } else {
+              mncRegNumber = registrationNumber;
+            }
+
+            // Check if student already exists
+            const existingByUid = studentUniqueId ? Student.findByMncUID(studentUniqueId) : null;
+            const existingByReg = registrationNumber ? Student.findByMncRegistrationNumber(registrationNumber) : null;
+            const existingByMobile = mobile ? Student.findByMobile(mobile) : null;
+            const existingByEmail = email ? Student.findByEmail(email) : null;
+
+            if (existingByUid || existingByReg || existingByMobile || existingByEmail) {
+              fileSkipped++;
+              continue;
+            }
+
+            // Create new student
+            Student.create({
+              name: name.trim(),
+              mncUID: studentUniqueId ? studentUniqueId.trim() : null,
+              mncRegistrationNumber: registrationNumber ? registrationNumber.trim() : null,
+              mncRegPrefix: mncRegPrefix || null,
+              mncRegNumber: mncRegNumber || null,
+              mobileNumber: mobile || null,
+              email: email ? email.trim().toLowerCase() : null
+            });
+
+            fileImported++;
+          } catch (rowError) {
+            fileErrors++;
+          }
+        }
+
+        fileResults.push({
+          filename: file.originalname,
+          imported: fileImported,
+          skipped: fileSkipped,
+          errors: fileErrors,
+          total: data.length
+        });
+
+        totalImported += fileImported;
+        totalSkipped += fileSkipped;
+        totalErrors += fileErrors;
+
+        // Delete temp file
+        fs.unlinkSync(file.path);
+
+      } catch (fileError) {
+        errors.push({
+          filename: file.originalname,
+          error: fileError.message
+        });
+        totalErrors++;
+        
+        // Try to delete temp file
+        try { fs.unlinkSync(file.path); } catch (e) {}
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Imported ${totalImported} students, skipped ${totalSkipped} duplicates`,
+      summary: {
+        totalImported,
+        totalSkipped,
+        totalErrors,
+        filesProcessed: req.files.length
+      },
+      fileResults,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error) {
+    console.error('Error in bulk import:', error);
+    
+    // Clean up any uploaded files
+    if (req.files) {
+      req.files.forEach(file => {
+        try { fs.unlinkSync(file.path); } catch (e) {}
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error importing students: ' + error.message
+    });
+  }
+});
+
+// Get all students (with pagination and search)
+router.get('/students', isAuthenticated, async (req, res) => {
+  try {
+    const { page = 1, limit = 50, search = '' } = req.query;
+    let students = Student.find({});
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      students = students.filter(s => 
+        (s.name && s.name.toLowerCase().includes(searchLower)) ||
+        (s.mncUID && s.mncUID.toLowerCase().includes(searchLower)) ||
+        (s.mncRegistrationNumber && s.mncRegistrationNumber.toLowerCase().includes(searchLower)) ||
+        (s.mobileNumber && s.mobileNumber.includes(search)) ||
+        (s.email && s.email.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Sort by name
+    students.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedStudents = students.slice(startIndex, endIndex);
+
+    res.json({
+      success: true,
+      data: paginatedStudents,
+      pagination: {
+        total: students.length,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(students.length / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ success: false, message: 'Error fetching students' });
+  }
+});
+
+// Delete all students (for reset)
+router.delete('/students/all', isAdmin, async (req, res) => {
+  try {
+    const students = Student.find({});
+    const count = students.length;
+    
+    // Clear students file
+    fs.writeFileSync(
+      path.join(__dirname, '..', 'database', 'students.json'),
+      JSON.stringify([], null, 2)
+    );
+    
+    res.json({
+      success: true,
+      message: `Deleted ${count} students`
+    });
+  } catch (error) {
+    console.error('Error deleting students:', error);
+    res.status(500).json({ success: false, message: 'Error deleting students' });
+  }
+});
+
 module.exports = router;

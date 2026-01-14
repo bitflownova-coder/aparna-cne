@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Student Import - Admin</title>
+    <link rel="icon" href="/assest/logo.png" type="image/png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header h2 {
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .info-box ul {
+            margin: 0.5rem 0 0 1.5rem;
+            color: #1e3a8a;
+            font-size: 0.9rem;
+        }
+
+        .upload-zone {
+            border: 3px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .upload-zone.drag-over {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .upload-zone .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone h3 {
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone p {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-list {
+            margin-bottom: 1.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-item .file-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-item .file-name span {
+            color: #374151;
+        }
+
+        .file-item .remove-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .file-item .remove-btn:hover {
+            background: #fecaca;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .summary-card.imported {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .summary-card.skipped {
+            background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
+        }
+
+        .summary-card.errors {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+        }
+
+        .summary-card.files {
+            background: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%);
+        }
+
+        .summary-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        .summary-card .label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .file-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .file-result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .file-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-result-item .filename {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .file-result-item .stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .file-result-item .stats span {
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .stats .imported { background: #dcfce7; color: #166534; }
+        .stats .skipped { background: #fef08a; color: #854d0e; }
+        .stats .errors { background: #fecaca; color: #dc2626; }
+
+        /* Loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 2000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            background: #10b981;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Current Students Count */
+        .stats-bar {
+            background: #1e3a8a;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-bar span {
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .upload-zone {
+                padding: 2rem 1rem;
+            }
+
+            .upload-zone .icon {
+                font-size: 3rem;
+            }
+
+            .btn-container {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>📊 Bulk Student Import</h1>
+        <div class="nav-links">
+            <a href="/admin-dashboard.html">🏠 Dashboard</a>
+            <a href="/admin-students.html">👥 Students</a>
+            <a href="/admin-workshops.html">📚 Workshops</a>
+            <a href="#" onclick="logout()">🚪 Logout</a>
+        </div>
+    </nav>
+
+    <div class="stats-bar">
+        <span>📊 Current Students in Database: <strong id="currentCount">Loading...</strong></span>
+        <span id="lastUpdated"></span>
+    </div>
+
+    <div class="container">
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📁 Upload Excel Files</h2>
+                <button class="btn btn-danger" onclick="clearAllStudents()" id="clearBtn" style="display: none;">
+                    🗑️ Clear All Students
+                </button>
+            </div>
+
+            <div class="info-box">
+                <h4>📋 Required Excel Columns:</h4>
+                <ul>
+                    <li><strong>Student Unique ID</strong> → MNC UID</li>
+                    <li><strong>Registration Number</strong> → MNC Registration Number (e.g., XLVI-361)</li>
+                    <li><strong>Name</strong> → Student Name</li>
+                    <li><strong>Mobile No</strong> → Mobile Number</li>
+                    <li><strong>Email</strong> → Email Address</li>
+                </ul>
+                <p style="margin-top: 0.5rem;">ℹ️ You can upload <strong>multiple files at once</strong> (up to 50 files). Duplicates will be automatically skipped.</p>
+            </div>
+
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="icon">📂</div>
+                <h3>Click or Drag & Drop Excel Files</h3>
+                <p>Supports .xlsx files (Max 10MB each)</p>
+            </div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="handleFileSelect(event)">
+
+            <div class="file-list" id="fileList"></div>
+
+            <div class="btn-container">
+                <button class="btn btn-primary" id="importBtn" onclick="importStudents()" disabled>
+                    📥 Import All Students
+                </button>
+                <button class="btn btn-secondary" onclick="clearFiles()">
+                    🗑️ Clear Selected Files
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card results-section" id="resultsSection">
+            <div class="card-header">
+                <h2>✅ Import Results</h2>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card imported">
+                    <div class="number" id="importedCount">0</div>
+                    <div class="label">Students Imported</div>
+                </div>
+                <div class="summary-card skipped">
+                    <div class="number" id="skippedCount">0</div>
+                    <div class="label">Duplicates Skipped</div>
+                </div>
+                <div class="summary-card errors">
+                    <div class="number" id="errorsCount">0</div>
+                    <div class="label">Errors</div>
+                </div>
+                <div class="summary-card files">
+                    <div class="number" id="filesCount">0</div>
+                    <div class="label">Files Processed</div>
+                </div>
+            </div>
+
+            <h4 style="margin-bottom: 0.5rem; color: #374151;">📄 File-by-File Results:</h4>
+            <div class="file-results" id="fileResults"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Importing students...</p>
+            <p style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem;">This may take a moment for large files</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let selectedFiles = [];
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadCurrentCount();
+        });
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/admin/check-session');
+                const data = await response.json();
+                if (!data.authenticated || data.role !== 'admin') {
+                    window.location.href = '/admin-login.html';
+                }
+            } catch (error) {
+                window.location.href = '/admin-login.html';
+            }
+        }
+
+        async function loadCurrentCount() {
+            try {
+                const response = await fetch('/api/admin/students?limit=1');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('currentCount').textContent = data.pagination.total;
+                    document.getElementById('clearBtn').style.display = data.pagination.total > 0 ? 'block' : 'none';
+                }
+            } catch (error) {
+                document.getElementById('currentCount').textContent = 'Error';
+            }
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('uploadZone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            
+            const files = Array.from(e.dataTransfer.files).filter(f => 
+                f.name.endsWith('.xlsx') || f.name.endsWith('.xls')
+            );
+            
+            addFiles(files);
+        });
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            addFiles(files);
+            event.target.value = ''; // Reset input
+        }
+
+        function addFiles(files) {
+            files.forEach(file => {
+                // Check if already added
+                if (!selectedFiles.find(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+                }
+            });
+            renderFileList();
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('fileList');
+            const importBtn = document.getElementById('importBtn');
+
+            if (selectedFiles.length === 0) {
+                container.innerHTML = '';
+                importBtn.disabled = true;
+                return;
+            }
+
+            importBtn.disabled = false;
+
+            container.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-name">
+                        <span>📊</span>
+                        <span>${file.name}</span>
+                        <span style="color: #6b7280; font-size: 0.85rem;">(${(file.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button class="remove-btn" onclick="removeFile(${index})">✕ Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            renderFileList();
+        }
+
+        async function importStudents() {
+            if (selectedFiles.length === 0) {
+                showToast('Please select files first', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingOverlay').classList.add('show');
+
+            try {
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                const response = await fetch('/api/admin/students/bulk-import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                document.getElementById('loadingOverlay').classList.remove('show');
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    displayResults(result);
+                    clearFiles();
+                    loadCurrentCount();
+                } else {
+                    showToast(result.message || 'Import failed', 'error');
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        function displayResults(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.classList.add('show');
+
+            document.getElementById('importedCount').textContent = result.summary.totalImported;
+            document.getElementById('skippedCount').textContent = result.summary.totalSkipped;
+            document.getElementById('errorsCount').textContent = result.summary.totalErrors;
+            document.getElementById('filesCount').textContent = result.summary.filesProcessed;
+
+            const fileResultsContainer = document.getElementById('fileResults');
+            if (result.fileResults && result.fileResults.length > 0) {
+                fileResultsContainer.innerHTML = result.fileResults.map(fr => `
+                    <div class="file-result-item">
+                        <span class="filename">📊 ${fr.filename}</span>
+                        <div class="stats">
+                            <span class="imported">✅ ${fr.imported} imported</span>
+                            <span class="skipped">⏭️ ${fr.skipped} skipped</span>
+                            ${fr.errors > 0 ? `<span class="errors">❌ ${fr.errors} errors</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function clearAllStudents() {
+            if (!confirm('⚠️ Are you sure you want to DELETE ALL students from the database? This cannot be undone!')) {
+                return;
+            }
+
+            if (!confirm('🚨 FINAL WARNING: This will permanently delete ALL student records. Type "DELETE" in the next prompt to confirm.')) {
+                return;
+            }
+
+            const confirmation = prompt('Type DELETE to confirm:');
+            if (confirmation !== 'DELETE') {
+                showToast('Deletion cancelled', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/students/all', {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadCurrentCount();
+                    document.getElementById('resultsSection').classList.remove('show');
+                } else {
+                    showToast(result.message || 'Failed to delete', 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function logout() {
+            fetch('/api/admin/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/admin-login.html';
+                });
+        }
+    </script>
+</body>
+</html>
