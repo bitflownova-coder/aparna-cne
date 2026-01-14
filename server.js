@@ -6,6 +6,18 @@ const path = require('path');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 
+// Detect Hostinger production environment and set MySQL config
+const isHostinger = __dirname.includes('/home/u984810592/') || process.env.NODE_ENV === 'production';
+if (isHostinger && !process.env.USE_MYSQL) {
+  // Hardcoded production config for Hostinger - THIS ENSURES DATA PERSISTENCE
+  process.env.USE_MYSQL = 'true';
+  process.env.DB_HOST = '127.0.0.1';
+  process.env.DB_USER = 'u984810592_aparna_admin';
+  process.env.DB_PASSWORD = 'sCARFACE@2003?.';
+  process.env.DB_NAME = 'u984810592_aparna_cne';
+  console.log('Hostinger detected - Using hardcoded MySQL config');
+}
+
 // Use MySQL database for production, local JSON for development
 const useMySQL = process.env.USE_MYSQL === 'true';
 let db;
