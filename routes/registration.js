@@ -314,7 +314,7 @@ router.post('/view', async (req, res) => {
           venue: workshop.venue
         } : null
       };
-    });
+    }));
 
     res.json({
       success: true,
