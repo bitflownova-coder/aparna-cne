@@ -119,7 +119,8 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
       });
     }
 
-    if (!workshop.canAcceptRegistrations()) {
+    // Check if workshop is full
+    if (workshop.currentRegistrations >= workshop.maxSeats) {
       return res.status(400).json({
         success: false,
         message: 'Registration closed. All seats are filled.'
