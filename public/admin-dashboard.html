@@ -141,61 +141,162 @@
             color: #667eea;
         }
 
-        /* Registrations List */
+        /* Registrations List - Excel Style Table */
         .registrations-container {
             background: white;
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow-x: auto;
         }
 
         .search-box {
             margin-bottom: 20px;
         }
 
-        .registration-card {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: all 0.2s;
+        .reg-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 900px;
         }
 
-        .registration-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-        }
-
-        .reg-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .reg-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .reg-form-no {
+        .reg-table th {
             background: #667eea;
             color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 12px 8px;
+            text-align: left;
             font-weight: 600;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .reg-details {
-            display: grid;
-            gap: 8px;
-            font-size: 0.9rem;
+        .reg-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .reg-table tbody tr:hover {
+            background: #f1f5f9;
+        }
+
+        .reg-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .reg-table tbody tr:nth-child(even):hover {
+            background: #e2e8f0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-present {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-applied {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .badge-form {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-right: 4px;
+            font-weight: 500;
+        }
+
+        .action-btn-view {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .action-btn-payment {
+            background: #10b981;
+            color: white;
+        }
+
+        .action-btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .truncate-text {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Details Modal */
+        .details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .details-content {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .details-content h3 {
+            color: #1e293b;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-label {
+            font-weight: 600;
             color: #64748b;
+            width: 150px;
+            flex-shrink: 0;
+        }
+
+        .detail-value {
+            color: #1e293b;
         }
 
         .reg-detail-row {
@@ -347,24 +448,31 @@
                 border-radius: 12px;
             }
 
-            .registration-card {
-                padding: 12px;
+            .reg-table {
+                font-size: 0.75rem;
             }
 
-            .reg-name {
-                font-size: 1rem;
+            .reg-table th, .reg-table td {
+                padding: 6px 4px;
             }
 
-            .reg-details {
-                font-size: 0.85rem;
+            .action-btn {
+                padding: 3px 5px;
+                font-size: 0.65rem;
             }
 
-            .reg-actions {
+            .badge {
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+
+            .detail-row {
                 flex-direction: column;
             }
 
-            .reg-actions .btn-small {
+            .detail-label {
                 width: 100%;
+                margin-bottom: 4px;
             }
 
             .alert {
@@ -393,9 +501,9 @@
                 font-size: 1.3rem;
             }
 
-            .reg-header {
-                flex-direction: column;
-                align-items: flex-start;
+            .details-content {
+                margin: 20px auto;
+                padding: 16px;
             }
         }
     </style>
@@ -508,6 +616,17 @@
         <div style="max-width: 900px; margin: 40px auto; position: relative;" onclick="event.stopPropagation()">
             <button onclick="closePaymentModal()" style="position: absolute; top: -40px; right: 0; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">×</button>
             <img id="paymentImage" src="" style="width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="details-modal" onclick="closeDetailsModal()">
+        <div class="details-content" onclick="event.stopPropagation()">
+            <button onclick="closeDetailsModal()" style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; font-weight: bold;">×</button>
+            <h3>Participant Details</h3>
+            <div id="detailsContent">
+                <!-- Details will be inserted here -->
+            </div>
         </div>
     </div>
 

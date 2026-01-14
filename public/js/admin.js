@@ -175,7 +175,7 @@ async function loadRegistrations() {
     }
 }
 
-// Display registrations as cards
+// Display registrations as Excel-style table
 function displayRegistrations(registrations) {
     const listContainer = document.getElementById('registrationsList');
     
@@ -184,85 +184,54 @@ function displayRegistrations(registrations) {
         return;
     }
 
-    let cardsHTML = '';
+    // Store registrations globally for details modal
+    window.registrationsData = {};
+    registrations.forEach(reg => {
+        window.registrationsData[reg._id] = reg;
+    });
+
+    let tableHTML = `
+        <table class="reg-table">
+            <thead>
+                <tr>
+                    <th>Form No</th>
+                    <th>MNC UID</th>
+                    <th>MNC Reg No</th>
+                    <th>Name</th>
+                    <th>Payment UTR</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
     
     registrations.forEach(reg => {
-        const submittedDate = new Date(reg.submittedAt).toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
-        
         const attendanceStatus = reg.attendanceStatus || 'Applied';
         const isPresent = attendanceStatus === 'Present';
-        const attendanceBadge = isPresent 
-            ? '<span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">✓ Present</span>'
-            : '<span style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">● Applied</span>';
+        const statusBadge = isPresent 
+            ? '<span class="badge badge-present">✓ Present</span>'
+            : '<span class="badge badge-applied">● Applied</span>';
         
-        // Determine registration source
-        let registrationSource = '🌐 Website';
-        let sourceColor = '#3b82f6';
-        
-        if (reg.submittedBy === 'executive' || reg.submittedBy === 'executive_bulk') {
-            const executiveName = reg.executiveUsername || reg.registeredBy || 'Unknown';
-            const method = reg.submittedBy === 'executive_bulk' ? 'Bulk' : 'Individual';
-            registrationSource = `👔 ${executiveName} (${method})`;
-            sourceColor = '#8b5cf6';
-        }
-        
-        cardsHTML += `
-            <div class="registration-card">
-                <div class="reg-header">
-                    <div class="reg-name">${escapeHtml(reg.fullName)}</div>
-                    <div class="reg-form-no">Form ${reg.formNumber || '-'}</div>
-                </div>
-                <div class="reg-details">
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Registration Source:</span>
-                        <span style="color: ${sourceColor}; font-weight: 600;">${registrationSource}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">MNC UID:</span>
-                        <span>${escapeHtml(reg.mncUID)}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Reg Number:</span>
-                        <span>${escapeHtml(reg.mncRegistrationNumber || '-')}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Mobile:</span>
-                        <span>${reg.mobileNumber}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Payment UTR:</span>
-                        <span>${reg.paymentUTR}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Submitted:</span>
-                        <span>${submittedDate}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Attendance:</span>
-                        <span>${attendanceBadge}</span>
-                    </div>
-                    <div class="reg-detail-row">
-                        <span class="reg-detail-label">Downloads:</span>
-                        <span style="color: ${reg.downloadCount >= 2 ? '#ef4444' : '#10b981'}; font-weight: 700;">${reg.downloadCount}/2</span>
-                    </div>
-                </div>
-                <div class="reg-actions">
-                    <button class="btn btn-primary btn-small" onclick="viewPayment('${reg.paymentScreenshot}')">
-                        View Payment
-                    </button>
-                    <button class="btn btn-danger btn-small" onclick="deleteRegistration('${reg._id}')">
-                        Delete
-                    </button>
-                </div>
-            </div>
+        tableHTML += `
+            <tr>
+                <td><span class="badge badge-form">${reg.formNumber || '-'}</span></td>
+                <td title="${escapeHtml(reg.mncUID)}">${escapeHtml(reg.mncUID)}</td>
+                <td title="${escapeHtml(reg.mncRegistrationNumber || '-')}">${escapeHtml(reg.mncRegistrationNumber || '-')}</td>
+                <td class="truncate-text" title="${escapeHtml(reg.fullName)}">${escapeHtml(reg.fullName)}</td>
+                <td title="${reg.paymentUTR}">${reg.paymentUTR}</td>
+                <td>${statusBadge}</td>
+                <td style="white-space: nowrap;">
+                    <button class="action-btn action-btn-view" onclick="viewDetails('${reg._id}')" title="View Details">👁️</button>
+                    <button class="action-btn action-btn-payment" onclick="viewPayment('${reg.paymentScreenshot}')" title="View Payment">💳</button>
+                    <button class="action-btn action-btn-delete" onclick="deleteRegistration('${reg._id}')" title="Delete">🗑️</button>
+                </td>
+            </tr>
         `;
     });
     
-    listContainer.innerHTML = cardsHTML;
+    tableHTML += '</tbody></table>';
+    listContainer.innerHTML = tableHTML;
 }
 
 // View payment screenshot
@@ -279,6 +248,131 @@ function viewPayment(screenshotPath) {
 function closePaymentModal() {
     const modal = document.getElementById('paymentModal');
     modal.style.display = 'none';
+}
+
+// View participant details
+function viewDetails(id) {
+    const reg = window.registrationsData[id];
+    if (!reg) {
+        showAlert('Registration details not found', 'error');
+        return;
+    }
+    
+    const submittedDate = new Date(reg.submittedAt).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Determine registration source
+    let registrationSource = '🌐 Website';
+    if (reg.submittedBy === 'executive' || reg.submittedBy === 'executive_bulk') {
+        const executiveName = reg.executiveUsername || reg.registeredBy || 'Unknown';
+        const method = reg.submittedBy === 'executive_bulk' ? 'Bulk' : 'Individual';
+        registrationSource = `👔 ${executiveName} (${method})`;
+    }
+    
+    const attendanceStatus = reg.attendanceStatus || 'Applied';
+    const attendanceMarkedAt = reg.attendanceMarkedAt 
+        ? new Date(reg.attendanceMarkedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '-';
+    
+    const detailsHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Form Number:</span>
+            <span class="detail-value">${reg.formNumber || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Full Name:</span>
+            <span class="detail-value">${escapeHtml(reg.fullName)}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">MNC UID:</span>
+            <span class="detail-value">${escapeHtml(reg.mncUID)}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">MNC Reg Number:</span>
+            <span class="detail-value">${escapeHtml(reg.mncRegistrationNumber || '-')}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Mobile:</span>
+            <span class="detail-value">${reg.mobileNumber}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value">${reg.email || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Date of Birth:</span>
+            <span class="detail-value">${reg.dateOfBirth || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Gender:</span>
+            <span class="detail-value">${reg.gender || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Qualification:</span>
+            <span class="detail-value">${reg.qualification || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Organization:</span>
+            <span class="detail-value">${escapeHtml(reg.organization || '-')}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Address:</span>
+            <span class="detail-value">${escapeHtml(reg.address || '-')}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">City:</span>
+            <span class="detail-value">${escapeHtml(reg.city || '-')}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">State:</span>
+            <span class="detail-value">${escapeHtml(reg.state || '-')}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Pin Code:</span>
+            <span class="detail-value">${reg.pinCode || '-'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Payment UTR:</span>
+            <span class="detail-value">${reg.paymentUTR}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Payment Verified:</span>
+            <span class="detail-value">${reg.paymentVerified ? '✅ Yes' : '❌ No'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Attendance:</span>
+            <span class="detail-value">${attendanceStatus === 'Present' ? '✅ Present' : '⏳ Applied'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Attendance Marked:</span>
+            <span class="detail-value">${attendanceMarkedAt}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Download Count:</span>
+            <span class="detail-value" style="color: ${reg.downloadCount >= 2 ? '#ef4444' : '#10b981'}; font-weight: 700;">${reg.downloadCount}/2</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Registration Source:</span>
+            <span class="detail-value">${registrationSource}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Submitted At:</span>
+            <span class="detail-value">${submittedDate}</span>
+        </div>
+    `;
+    
+    document.getElementById('detailsContent').innerHTML = detailsHTML;
+    document.getElementById('detailsModal').style.display = 'block';
+}
+
+// Close details modal
+function closeDetailsModal() {
+    document.getElementById('detailsModal').style.display = 'none';
 }
 
 // Delete registration
