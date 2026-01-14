@@ -134,12 +134,22 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
             email, dateOfBirth, gender, qualification, organization, 
             experience, city, state, pinCode } = req.body;
 
-    if (!fullName || !mncUID || !mncRegistrationNumber || !mobileNumber || !address || !paymentUTR ||
-        !email || !dateOfBirth || !gender || !qualification || 
-        !organization || !experience || !city || !state || !pinCode) {
+    // Check each field and return specific error
+    const requiredFields = {
+      fullName, mncUID, mncRegistrationNumber, mobileNumber, address, paymentUTR,
+      email, dateOfBirth, gender, qualification, organization, experience, city, state, pinCode
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value || value === '')
+      .map(([key]) => key);
+    
+    if (missingFields.length > 0) {
+      console.log('Missing fields:', missingFields);
+      console.log('Received body:', req.body);
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
+        message: `Missing required fields: ${missingFields.join(', ')}`
       });
     }
 
