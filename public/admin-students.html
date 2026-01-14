@@ -39,11 +39,21 @@
             gap: 15px;
             flex-wrap: wrap;
             align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .search-filter-row:last-child {
+            margin-bottom: 0;
         }
 
         .filter-group {
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
+        }
+
+        .filter-group.search-box {
+            min-width: 300px;
+            flex: 2;
         }
 
         .filter-group label {
@@ -51,6 +61,7 @@
             margin-bottom: 5px;
             font-weight: 500;
             color: #555;
+            font-size: 13px;
         }
 
         .filter-group input,
@@ -60,6 +71,83 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .filter-buttons button {
+            padding: 10px 20px;
+        }
+
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .filter-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-tag .remove-filter {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .filter-tag .remove-filter:hover {
+            color: #c62828;
+        }
+
+        .results-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .sort-indicator {
+            font-size: 10px;
+            margin-left: 5px;
+        }
+
+        .students-table th {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .students-table th:hover {
+            background: #2980b9;
+        }
+
+        .students-table th.sorted-asc::after {
+            content: ' ▲';
+            font-size: 10px;
+        }
+
+        .students-table th.sorted-desc::after {
+            content: ' ▼';
+            font-size: 10px;
         }
 
         .stats-cards {
@@ -436,11 +524,28 @@
 
         <!-- Search and Filter Section -->
         <div class="search-filter-section">
+            <!-- Row 1: Search -->
             <div class="search-filter-row">
-                <div class="filter-group">
-                    <label>Search by Name/Mobile/MNC UID</label>
-                    <input type="text" id="searchInput" placeholder="Type to search...">
+                <div class="filter-group search-box">
+                    <label>🔍 Search</label>
+                    <input type="text" id="searchInput" placeholder="Search by Name, Mobile, MNC UID, Email, Registration No...">
                 </div>
+                <div class="filter-group">
+                    <label>Filter by City</label>
+                    <select id="cityFilter">
+                        <option value="">All Cities</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Filter by State</label>
+                    <select id="stateFilter">
+                        <option value="">All States</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: More Filters -->
+            <div class="search-filter-row">
                 <div class="filter-group">
                     <label>Filter by Gender</label>
                     <select id="genderFilter">
@@ -451,16 +556,67 @@
                     </select>
                 </div>
                 <div class="filter-group">
+                    <label>Filter by Qualification</label>
+                    <select id="qualificationFilter">
+                        <option value="">All Qualifications</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Filter by Organization</label>
+                    <select id="organizationFilter">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label>Min Workshops</label>
                     <input type="number" id="minWorkshops" placeholder="0" min="0">
                 </div>
+            </div>
+
+            <!-- Row 3: Date Range and Buttons -->
+            <div class="search-filter-row">
+                <div class="filter-group">
+                    <label>Registered From</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                <div class="filter-group">
+                    <label>Registered To</label>
+                    <input type="date" id="dateTo">
+                </div>
+                <div class="filter-group">
+                    <label>Sort By</label>
+                    <select id="sortBy">
+                        <option value="createdAt-desc">Newest First</option>
+                        <option value="createdAt-asc">Oldest First</option>
+                        <option value="fullName-asc">Name (A-Z)</option>
+                        <option value="fullName-desc">Name (Z-A)</option>
+                        <option value="city-asc">City (A-Z)</option>
+                        <option value="city-desc">City (Z-A)</option>
+                        <option value="totalWorkshops-desc">Most Workshops</option>
+                        <option value="totalWorkshops-asc">Least Workshops</option>
+                    </select>
+                </div>
                 <div class="filter-group">
                     <label>&nbsp;</label>
-                    <button onclick="applyFilters()" class="btn btn-primary" style="width: 100%;">
-                        Apply Filters
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="applyFilters()" class="btn btn-primary" style="flex: 1;">
+                            Apply
+                        </button>
+                        <button onclick="resetFilters()" class="btn btn-secondary" style="flex: 1;">
+                            Reset
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <!-- Active Filters Display -->
+            <div id="activeFiltersContainer" class="active-filters" style="display: none;"></div>
+        </div>
+
+        <!-- Results Info -->
+        <div class="results-info" id="resultsInfo" style="display: none;">
+            <span id="resultsCount">Showing 0 students</span>
+            <span id="resultsOf">of 0 total</span>
         </div>
 
         <!-- Students Table -->
@@ -479,14 +635,15 @@
             <table class="students-table" id="studentsTable" style="display: none;">
                 <thead>
                     <tr>
-                        <th>Student ID</th>
-                        <th>MNC UID</th>
-                        <th>Full Name</th>
-                        <th>Mobile</th>
-                        <th>MNC Reg No.</th>
-                        <th>City</th>
-                        <th>Workshops</th>
-                        <th>Registered On</th>
+                        <th onclick="sortTable('_id')">Student ID</th>
+                        <th onclick="sortTable('mncUID')">MNC UID</th>
+                        <th onclick="sortTable('fullName')">Full Name</th>
+                        <th onclick="sortTable('mobileNumber')">Mobile</th>
+                        <th onclick="sortTable('mncRegistrationNumber')">MNC Reg No.</th>
+                        <th onclick="sortTable('city')">City</th>
+                        <th onclick="sortTable('state')">State</th>
+                        <th onclick="sortTable('totalWorkshops')">Workshops</th>
+                        <th onclick="sortTable('createdAt')">Registered On</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -523,14 +680,22 @@
         let filteredStudents = [];
         let currentPage = 1;
         const itemsPerPage = 20;
+        let currentSort = { field: 'createdAt', direction: 'desc' };
 
         // Load students on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadStudents();
 
-            // Real-time search
+            // Real-time search with debounce
+            let searchTimeout;
             document.getElementById('searchInput').addEventListener('input', function() {
-                applyFilters();
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => applyFilters(), 300);
+            });
+
+            // Auto-apply filters on change
+            ['genderFilter', 'cityFilter', 'stateFilter', 'qualificationFilter', 'organizationFilter', 'sortBy'].forEach(id => {
+                document.getElementById(id).addEventListener('change', applyFilters);
             });
         });
 
@@ -542,12 +707,61 @@
 
                 if (data.success) {
                     allStudents = data.data || data.students || [];
-                    filteredStudents = allStudents;
+                    filteredStudents = [...allStudents];
+                    populateFilterDropdowns();
                     updateStatistics();
-                    displayStudents();
+                    applyFilters();
                 } else {
                     alert('Error loading students: ' + data.message);
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load students');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function populateFilterDropdowns() {
+            // Get unique values for dropdowns
+            const cities = [...new Set(allStudents.map(s => s.city).filter(Boolean))].sort();
+            const states = [...new Set(allStudents.map(s => s.state).filter(Boolean))].sort();
+            const qualifications = [...new Set(allStudents.map(s => s.qualification).filter(Boolean))].sort();
+            const organizations = [...new Set(allStudents.map(s => s.organization).filter(Boolean))].sort();
+
+            // Populate City dropdown
+            const citySelect = document.getElementById('cityFilter');
+            citySelect.innerHTML = '<option value="">All Cities</option>';
+            cities.forEach(city => {
+                const count = allStudents.filter(s => s.city === city).length;
+                citySelect.innerHTML += `<option value="${city}">${city} (${count})</option>`;
+            });
+
+            // Populate State dropdown
+            const stateSelect = document.getElementById('stateFilter');
+            stateSelect.innerHTML = '<option value="">All States</option>';
+            states.forEach(state => {
+                const count = allStudents.filter(s => s.state === state).length;
+                stateSelect.innerHTML += `<option value="${state}">${state} (${count})</option>`;
+            });
+
+            // Populate Qualification dropdown
+            const qualSelect = document.getElementById('qualificationFilter');
+            qualSelect.innerHTML = '<option value="">All Qualifications</option>';
+            qualifications.forEach(qual => {
+                const count = allStudents.filter(s => s.qualification === qual).length;
+                qualSelect.innerHTML += `<option value="${qual}">${qual} (${count})</option>`;
+            });
+
+            // Populate Organization dropdown
+            const orgSelect = document.getElementById('organizationFilter');
+            orgSelect.innerHTML = '<option value="">All Organizations</option>';
+            organizations.forEach(org => {
+                const count = allStudents.filter(s => s.organization === org).length;
+                const displayOrg = org.length > 40 ? org.substring(0, 40) + '...' : org;
+                orgSelect.innerHTML += `<option value="${org}">${displayOrg} (${count})</option>`;
+            });
+        }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to load students');
@@ -577,31 +791,224 @@
         }
 
         function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const genderFilter = document.getElementById('genderFilter').value;
+            const cityFilter = document.getElementById('cityFilter').value;
+            const stateFilter = document.getElementById('stateFilter').value;
+            const qualificationFilter = document.getElementById('qualificationFilter').value;
+            const organizationFilter = document.getElementById('organizationFilter').value;
             const minWorkshops = parseInt(document.getElementById('minWorkshops').value) || 0;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const sortBy = document.getElementById('sortBy').value;
 
             filteredStudents = allStudents.filter(student => {
-                // Search filter
-                const studentName = student.fullName && student.fullName !== 'null' ? student.fullName : '';
+                // Search filter - search across multiple fields
+                const studentName = (student.fullName && student.fullName !== 'null') ? student.fullName.toLowerCase() : '';
+                const mobileNumber = student.mobileNumber || '';
+                const mncUID = (student.mncUID || '').toLowerCase();
+                const mncRegNo = (student.mncRegistrationNumber || '').toLowerCase();
+                const email = (student.email || '').toLowerCase();
+                const city = (student.city || '').toLowerCase();
+                const organization = (student.organization || '').toLowerCase();
+
                 const matchesSearch = !searchTerm || 
-                    studentName.toLowerCase().includes(searchTerm) ||
-                    student.mobileNumber.includes(searchTerm) ||
-                    (student.mncUID && student.mncUID.toLowerCase().includes(searchTerm)) ||
-                    (student.mncRegistrationNumber && student.mncRegistrationNumber.toLowerCase().includes(searchTerm)) ||
-                    (student.email && student.email.toLowerCase().includes(searchTerm));
+                    studentName.includes(searchTerm) ||
+                    mobileNumber.includes(searchTerm) ||
+                    mncUID.includes(searchTerm) ||
+                    mncRegNo.includes(searchTerm) ||
+                    email.includes(searchTerm) ||
+                    city.includes(searchTerm) ||
+                    organization.includes(searchTerm);
 
                 // Gender filter
                 const matchesGender = !genderFilter || student.gender === genderFilter;
 
+                // City filter
+                const matchesCity = !cityFilter || student.city === cityFilter;
+
+                // State filter
+                const matchesState = !stateFilter || student.state === stateFilter;
+
+                // Qualification filter
+                const matchesQualification = !qualificationFilter || student.qualification === qualificationFilter;
+
+                // Organization filter
+                const matchesOrganization = !organizationFilter || student.organization === organizationFilter;
+
                 // Workshop count filter
                 const matchesWorkshops = (student.totalWorkshops || 0) >= minWorkshops;
 
-                return matchesSearch && matchesGender && matchesWorkshops;
+                // Date range filter
+                let matchesDateRange = true;
+                if (dateFrom || dateTo) {
+                    const studentDate = new Date(student.createdAt);
+                    if (dateFrom) {
+                        const fromDate = new Date(dateFrom);
+                        fromDate.setHours(0, 0, 0, 0);
+                        if (studentDate < fromDate) matchesDateRange = false;
+                    }
+                    if (dateTo) {
+                        const toDate = new Date(dateTo);
+                        toDate.setHours(23, 59, 59, 999);
+                        if (studentDate > toDate) matchesDateRange = false;
+                    }
+                }
+
+                return matchesSearch && matchesGender && matchesCity && matchesState && 
+                       matchesQualification && matchesOrganization && matchesWorkshops && matchesDateRange;
             });
+
+            // Apply sorting
+            const [sortField, sortDirection] = sortBy.split('-');
+            currentSort = { field: sortField, direction: sortDirection };
+            sortStudents(sortField, sortDirection);
+
+            // Update active filters display
+            updateActiveFilters();
+
+            // Update results info
+            updateResultsInfo();
 
             currentPage = 1;
             displayStudents();
+        }
+
+        function sortStudents(field, direction) {
+            filteredStudents.sort((a, b) => {
+                let valA = a[field];
+                let valB = b[field];
+
+                // Handle null/undefined values
+                if (valA === null || valA === undefined) valA = '';
+                if (valB === null || valB === undefined) valB = '';
+
+                // Handle dates
+                if (field === 'createdAt' || field === 'updatedAt') {
+                    valA = new Date(valA || 0).getTime();
+                    valB = new Date(valB || 0).getTime();
+                }
+                // Handle numbers
+                else if (field === 'totalWorkshops') {
+                    valA = parseInt(valA) || 0;
+                    valB = parseInt(valB) || 0;
+                }
+                // Handle strings
+                else if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+
+                if (direction === 'asc') {
+                    return valA > valB ? 1 : valA < valB ? -1 : 0;
+                } else {
+                    return valA < valB ? 1 : valA > valB ? -1 : 0;
+                }
+            });
+        }
+
+        function sortTable(field) {
+            const newDirection = (currentSort.field === field && currentSort.direction === 'asc') ? 'desc' : 'asc';
+            currentSort = { field, direction: newDirection };
+            
+            // Update dropdown to match
+            const sortValue = `${field}-${newDirection}`;
+            const sortSelect = document.getElementById('sortBy');
+            const option = sortSelect.querySelector(`option[value="${sortValue}"]`);
+            if (option) {
+                sortSelect.value = sortValue;
+            }
+            
+            sortStudents(field, newDirection);
+            displayStudents();
+            updateTableHeaders();
+        }
+
+        function updateTableHeaders() {
+            const headers = document.querySelectorAll('.students-table th');
+            headers.forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            // Add sorted class to current sort column
+            const headerIndex = {
+                '_id': 0, 'mncUID': 1, 'fullName': 2, 'mobileNumber': 3,
+                'mncRegistrationNumber': 4, 'city': 5, 'state': 6, 'totalWorkshops': 7, 'createdAt': 8
+            };
+            const idx = headerIndex[currentSort.field];
+            if (idx !== undefined && headers[idx]) {
+                headers[idx].classList.add(`sorted-${currentSort.direction}`);
+            }
+        }
+
+        function updateActiveFilters() {
+            const container = document.getElementById('activeFiltersContainer');
+            const filters = [];
+
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const genderFilter = document.getElementById('genderFilter').value;
+            const cityFilter = document.getElementById('cityFilter').value;
+            const stateFilter = document.getElementById('stateFilter').value;
+            const qualificationFilter = document.getElementById('qualificationFilter').value;
+            const organizationFilter = document.getElementById('organizationFilter').value;
+            const minWorkshops = document.getElementById('minWorkshops').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            if (searchTerm) filters.push({ label: `Search: "${searchTerm}"`, clear: () => { document.getElementById('searchInput').value = ''; applyFilters(); }});
+            if (genderFilter) filters.push({ label: `Gender: ${genderFilter}`, clear: () => { document.getElementById('genderFilter').value = ''; applyFilters(); }});
+            if (cityFilter) filters.push({ label: `City: ${cityFilter}`, clear: () => { document.getElementById('cityFilter').value = ''; applyFilters(); }});
+            if (stateFilter) filters.push({ label: `State: ${stateFilter}`, clear: () => { document.getElementById('stateFilter').value = ''; applyFilters(); }});
+            if (qualificationFilter) filters.push({ label: `Qualification: ${qualificationFilter}`, clear: () => { document.getElementById('qualificationFilter').value = ''; applyFilters(); }});
+            if (organizationFilter) filters.push({ label: `Organization: ${organizationFilter.substring(0, 20)}...`, clear: () => { document.getElementById('organizationFilter').value = ''; applyFilters(); }});
+            if (minWorkshops) filters.push({ label: `Min Workshops: ${minWorkshops}`, clear: () => { document.getElementById('minWorkshops').value = ''; applyFilters(); }});
+            if (dateFrom) filters.push({ label: `From: ${dateFrom}`, clear: () => { document.getElementById('dateFrom').value = ''; applyFilters(); }});
+            if (dateTo) filters.push({ label: `To: ${dateTo}`, clear: () => { document.getElementById('dateTo').value = ''; applyFilters(); }});
+
+            if (filters.length > 0) {
+                container.style.display = 'flex';
+                container.innerHTML = filters.map((f, i) => `
+                    <span class="filter-tag">
+                        ${f.label}
+                        <span class="remove-filter" onclick="clearFilter(${i})">×</span>
+                    </span>
+                `).join('');
+                // Store clear functions
+                window.filterClearFunctions = filters.map(f => f.clear);
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function clearFilter(index) {
+            if (window.filterClearFunctions && window.filterClearFunctions[index]) {
+                window.filterClearFunctions[index]();
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('genderFilter').value = '';
+            document.getElementById('cityFilter').value = '';
+            document.getElementById('stateFilter').value = '';
+            document.getElementById('qualificationFilter').value = '';
+            document.getElementById('organizationFilter').value = '';
+            document.getElementById('minWorkshops').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('sortBy').value = 'createdAt-desc';
+            applyFilters();
+        }
+
+        function updateResultsInfo() {
+            const resultsInfo = document.getElementById('resultsInfo');
+            const resultsCount = document.getElementById('resultsCount');
+            const resultsOf = document.getElementById('resultsOf');
+
+            resultsInfo.style.display = 'flex';
+            resultsCount.textContent = `Showing ${filteredStudents.length} students`;
+            resultsOf.textContent = filteredStudents.length < allStudents.length ? 
+                `(filtered from ${allStudents.length} total)` : 
+                `of ${allStudents.length} total`;
         }
 
         function displayStudents() {
@@ -637,6 +1044,7 @@
                     <td>${student.mobileNumber}</td>
                     <td><span style="font-family: monospace; color: #16a085;">${student.mncRegistrationNumber || '-'}</span></td>
                     <td>${student.city || '-'}</td>
+                    <td>${student.state || '-'}</td>
                     <td><span class="workshop-badge">${student.totalWorkshops || 0}</span></td>
                     <td>${formatDate(student.createdAt)}</td>
                     <td>
@@ -652,12 +1060,15 @@
             // Update pagination
             if (totalPages > 1) {
                 pagination.style.display = 'flex';
-                document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+                document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${filteredStudents.length} students)`;
                 document.getElementById('prevBtn').disabled = currentPage === 1;
                 document.getElementById('nextBtn').disabled = currentPage === totalPages;
             } else {
                 pagination.style.display = 'none';
             }
+
+            // Update table headers for sort indicators
+            updateTableHeaders();
         }
 
         function changePage(delta) {
