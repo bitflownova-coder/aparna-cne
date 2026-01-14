@@ -710,10 +710,73 @@ router.delete('/registrations/:id', isAuthenticated, async (req, res) => {
 router.get('/students', isAdmin, async (req, res) => {
   try {
     const students = await Student.find();
-    res.json({ success: true, students });
+    const registrations = await Registration.find({});
+    
+    // Enrich students with names from their registrations if fullName is missing
+    const enrichedStudents = students.map(student => {
+      // Check if fullName is null, undefined, empty, or literal string "null"
+      if (!student.fullName || student.fullName === 'null' || student.fullName === '') {
+        // Find registrations for this student by mobile number or studentId
+        const studentRegs = registrations.filter(r => 
+          r.studentId === student._id || r.mobileNumber === student.mobileNumber
+        );
+        
+        // Get name from most recent registration
+        if (studentRegs.length > 0) {
+          // Sort by submittedAt descending
+          studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+          const latestReg = studentRegs[0];
+          if (latestReg.fullName && latestReg.fullName !== 'null') {
+            student.fullName = latestReg.fullName;
+          }
+        }
+      }
+      return student;
+    });
+    
+    res.json({ success: true, students: enrichedStudents });
   } catch (error) {
     console.error('Error fetching students:', error);
     res.status(500).json({ success: false, message: 'Error fetching students' });
+  }
+});
+
+// Fix students with null names by updating from registrations
+router.post('/students/fix-names', isAdmin, async (req, res) => {
+  try {
+    const students = await Student.find();
+    const registrations = await Registration.find({});
+    let fixedCount = 0;
+    
+    for (const student of students) {
+      // Check if fullName is null, undefined, empty, or literal string "null"
+      if (!student.fullName || student.fullName === 'null' || student.fullName === '') {
+        // Find registrations for this student by mobile number or studentId
+        const studentRegs = registrations.filter(r => 
+          r.studentId === student._id || r.mobileNumber === student.mobileNumber
+        );
+        
+        if (studentRegs.length > 0) {
+          // Sort by submittedAt descending to get most recent
+          studentRegs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+          const latestReg = studentRegs[0];
+          
+          if (latestReg.fullName && latestReg.fullName !== 'null') {
+            // Update the student record in database
+            await Student.update(student._id, { fullName: latestReg.fullName });
+            fixedCount++;
+          }
+        }
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Fixed ${fixedCount} student records with names from registrations` 
+    });
+  } catch (error) {
+    console.error('Error fixing student names:', error);
+    res.status(500).json({ success: false, message: 'Error fixing student names' });
   }
 });
 
