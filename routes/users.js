@@ -6,7 +6,7 @@ const { isAdmin } = require('../middleware/auth');
 // Get all users (admin only)
 router.get('/', isAdmin, async (req, res) => {
   try {
-    const users = User.find({});
+    const users = await User.find({});
     res.json({
       success: true,
       data: users
@@ -34,7 +34,7 @@ router.post('/', isAdmin, async (req, res) => {
     }
     
     // Check if username already exists
-    const existingUser = User.findOne({ username });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -43,7 +43,7 @@ router.post('/', isAdmin, async (req, res) => {
     }
     
     // Create new user
-    const newUser = User.create({
+    const newUser = await User.create({
       username,
       password, // In production, hash this password
       fullName,

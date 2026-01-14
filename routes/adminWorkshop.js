@@ -45,7 +45,7 @@ router.get('/', isAuthenticated, async (req, res) => {
     const { status, startDate, endDate, search } = req.query;
     
     // Get all workshops
-    let workshops = Workshop.find({});
+    let workshops = await Workshop.find({});
     
     // Apply filters
     if (status && status !== 'all') {
@@ -90,7 +90,7 @@ router.get('/', isAuthenticated, async (req, res) => {
 // Get specific workshop
 router.get('/:id', isAuthenticated, async (req, res) => {
   try {
-    const workshop = Workshop.findById(req.params.id);
+    const workshop = await Workshop.findById(req.params.id);
     
     if (!workshop) {
       return res.status(404).json({
@@ -148,7 +148,7 @@ router.post('/', isAuthenticated, upload.single('qrCodeImage'), async (req, res)
     
     // Multiple workshops can be active simultaneously
     
-    const workshop = Workshop.create(workshopData);
+    const workshop = await Workshop.create(workshopData);
     
     res.json({
       success: true,
@@ -172,7 +172,7 @@ router.post('/', isAuthenticated, upload.single('qrCodeImage'), async (req, res)
 // Update workshop
 router.put('/:id', isAuthenticated, async (req, res) => {
   try {
-    const workshop = Workshop.findById(req.params.id);
+    const workshop = await Workshop.findById(req.params.id);
     
     if (!workshop) {
       return res.status(404).json({
@@ -218,7 +218,7 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       }
     });
     
-    const updatedWorkshop = Workshop.findByIdAndUpdate(req.params.id, updates);
+    const updatedWorkshop = await Workshop.findByIdAndUpdate(req.params.id, updates);
     
     res.json({
       success: true,

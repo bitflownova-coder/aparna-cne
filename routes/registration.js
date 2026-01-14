@@ -283,10 +283,10 @@ router.post('/view', async (req, res) => {
     }
 
     // Find ALL registrations for this user, sorted by newest first
-    const registrations = Registration.find(query)
-      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    const registrations = await Registration.find(query);
+    const sortedRegistrations = registrations.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
-    if (!registrations || registrations.length === 0) {
+    if (!sortedRegistrations || sortedRegistrations.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'No registration found with these details'
@@ -294,8 +294,8 @@ router.post('/view', async (req, res) => {
     }
 
     // Populate workshop details for each registration
-    const data = registrations.map(registration => {
-      const workshop = Workshop.findById(registration.workshopId);
+    const data = await Promise.all(sortedRegistrations.map(async registration => {
+      const workshop = await Workshop.findById(registration.workshopId);
       return {
         formNumber: registration.formNumber,
         fullName: registration.fullName,

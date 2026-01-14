@@ -3,10 +3,10 @@ const router = express.Router();
 const Workshop = require('../models/Workshop');
 
 // Get all public workshops
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Get all workshops
-    let workshops = Workshop.find({});
+    let workshops = await Workshop.find({});
     
     // Filter out drafts if necessary, keep active, upcoming, full, completed
     workshops = workshops.filter(w => w.status !== 'draft');
@@ -30,9 +30,9 @@ router.get('/', (req, res) => {
 });
 
 // Get active workshop (legacy - returns first active)
-router.get('/active', (req, res) => {
+router.get('/active', async (req, res) => {
   try {
-    const workshop = Workshop.getActiveWorkshop();
+    const workshop = await Workshop.getActiveWorkshop();
     
     if (!workshop) {
       return res.json({
@@ -57,9 +57,9 @@ router.get('/active', (req, res) => {
 });
 
 // Get ALL active workshops (new - supports multiple active)
-router.get('/active-all', (req, res) => {
+router.get('/active-all', async (req, res) => {
   try {
-    const workshops = Workshop.getActiveWorkshops();
+    const workshops = await Workshop.getActiveWorkshops();
     
     res.json({
       success: true,
@@ -77,9 +77,9 @@ router.get('/active-all', (req, res) => {
 });
 
 // Get upcoming workshops
-router.get('/upcoming', (req, res) => {
+router.get('/upcoming', async (req, res) => {
   try {
-    const workshops = Workshop.getUpcomingWorkshops();
+    const workshops = await Workshop.getUpcomingWorkshops();
     
     res.json({
       success: true,
@@ -96,9 +96,9 @@ router.get('/upcoming', (req, res) => {
 });
 
 // Get latest workshop (active or upcoming)
-router.get('/latest', (req, res) => {
+router.get('/latest', async (req, res) => {
   try {
-    const workshop = Workshop.getLatestWorkshop();
+    const workshop = await Workshop.getLatestWorkshop();
     
     if (!workshop) {
       return res.json({

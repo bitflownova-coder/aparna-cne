@@ -248,7 +248,7 @@ router.post('/bulk-upload', isAuthenticated, excelUpload.single('file'), async (
         }
 
         // Check if already registered
-        const existing = Registration.findOne({ 
+        const existing = await Registration.findOne({ 
           mncUID: row['MNC UID'] 
         });
         
@@ -275,7 +275,7 @@ router.post('/bulk-upload', isAuthenticated, excelUpload.single('file'), async (
         // Create registration
         const formNumber = await Registration.getNextFormNumber(workshop._id);
         
-        const registration = Registration.create({
+        const registration = await Registration.create({
           fullName: row['Full Name'],
           mncUID: row['MNC UID'],
           mncRegistrationNumber: row['MNC Registration Number'],
@@ -337,7 +337,7 @@ router.get('/registrations', isAuthenticated, async (req, res) => {
     const { search, page = 1, limit = 50, workshopId } = req.query;
     
     // Get all registrations (local DB doesn't support complex queries)
-    let allRegistrations = Registration.find({});
+    let allRegistrations = await Registration.find({});
     
     // Filter by workshop if specified
     if (workshopId) {
@@ -399,12 +399,12 @@ router.get('/stats', isAuthenticated, async (req, res) => {
     
     if (workshopId) {
       // Get stats for specific workshop
-      const workshop = Workshop.findById(workshopId);
+      const workshop = await Workshop.findById(workshopId);
       if (!workshop) {
         return res.status(404).json({ success: false, message: 'Workshop not found' });
       }
       
-      const total = Registration.getRegistrationCount(workshopId);
+      const total = await Registration.getRegistrationCount(workshopId);
       const maxRegistrations = workshop.maxSeats;
       const remaining = Math.max(0, maxRegistrations - total);
       const percentageFilled = total > 0 ? ((total / maxRegistrations) * 100).toFixed(2) : '0.00';
