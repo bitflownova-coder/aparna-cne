@@ -238,7 +238,7 @@ router.put('/:id', isAuthenticated, async (req, res) => {
 // Upload or replace QR code
 router.post('/:id/upload-qr', isAuthenticated, upload.single('qrCodeImage'), async (req, res) => {
   try {
-    const workshop = Workshop.findById(req.params.id);
+    const workshop = await Workshop.findById(req.params.id);
     
     if (!workshop) {
       if (req.file) fs.unlinkSync(req.file.path);
@@ -264,7 +264,7 @@ router.post('/:id/upload-qr', isAuthenticated, upload.single('qrCodeImage'), asy
     }
     
     // Update with new QR code
-    const updatedWorkshop = Workshop.findByIdAndUpdate(req.params.id, { qrCodeImage: req.file.filename });
+    const updatedWorkshop = await Workshop.findByIdAndUpdate(req.params.id, { qrCodeImage: req.file.filename });
     
     res.json({
       success: true,
