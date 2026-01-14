@@ -368,6 +368,17 @@ router.get('/download-template', isAgent, async (req, res) => {
         
         const templateSheet = XLSX.utils.aoa_to_sheet(templateData);
         
+        // Format mncUID column (column D, index 3) as text to preserve leading zeros
+        // Get the range of cells
+        const range = XLSX.utils.decode_range(templateSheet['!ref']);
+        for (let row = 1; row <= range.e.r; row++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: 3 }); // Column D (mncUID)
+            if (templateSheet[cellAddress]) {
+                templateSheet[cellAddress].t = 's'; // Set type to string
+                templateSheet[cellAddress].z = '@'; // Format as text
+            }
+        }
+        
         // Set column widths
         templateSheet['!cols'] = [
             { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 18 },
@@ -387,7 +398,8 @@ router.get('/download-template', isAgent, async (req, res) => {
             ['REQUIRED FIELDS (Must be filled):'],
             ['1. fullName - Full name of the participant'],
             ['2. mobileNumber - 10-digit mobile number (without country code)'],
-            ['3. mncUID - MNC UID number (e.g., MNC001)'],
+            ['3. mncUID - MNC UID number (e.g., MNC001 or 0123456)'],
+            ['   NOTE: If mncUID starts with 0, format the column as TEXT in Excel'],
             ['4. mncRegistrationNumber - MNC Registration Number (e.g., XVI-5581)'],
             [''],
             ['OPTIONAL FIELDS:'],
@@ -445,11 +457,11 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
             return res.status(400).json({ success: false, message: 'Invalid workshop selected' });
         }
 
-        // Read Excel file
-        const workbook = XLSX.readFile(req.file.path);
+        // Read Excel file with raw option to preserve values like leading zeros
+        const workbook = XLSX.readFile(req.file.path, { raw: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
 
         // Validate row count
         if (data.length === 0) {
@@ -600,8 +612,8 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         fullName: row.fullName,
                         mobileNumber: String(row.mobileNumber),
                         email: row.email,
-                        mncUID: row.mncUID || '',
-                        mncRegistrationNumber: row.mncRegistrationNumber || '',
+                        mncUID: String(row.mncUID || '').trim(),
+                        mncRegistrationNumber: String(row.mncRegistrationNumber || '').trim(),
                         dateOfBirth: row.dateOfBirth || null,
                         gender: row.gender || null,
                         qualification: row.qualification || null,

@@ -416,11 +416,11 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
 
-        // Read Excel file
-        const workbook = XLSX.readFile(req.file.path);
+        // Read Excel file with raw option to preserve values like leading zeros
+        const workbook = XLSX.readFile(req.file.path, { raw: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
 
         // Validate row count
         if (data.length === 0) {

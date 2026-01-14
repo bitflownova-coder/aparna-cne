@@ -201,11 +201,11 @@ router.post('/bulk-upload', isAuthenticated, excelUpload.single('file'), async (
       });
     }
 
-    // Read the uploaded Excel file
-    const workbook = XLSX.readFile(req.file.path);
+    // Read the uploaded Excel file with raw option to preserve values like leading zeros
+    const workbook = XLSX.readFile(req.file.path, { raw: true });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: '' });
 
     if (data.length === 0) {
       // Clean up temp file
@@ -1039,11 +1039,11 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
 
     for (const file of req.files) {
       try {
-        // Read Excel file
-        const workbook = XLSX.readFile(file.path);
+        // Read Excel file with raw option to preserve values like leading zeros
+        const workbook = XLSX.readFile(file.path, { raw: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
 
         let fileImported = 0;
         let fileSkipped = 0;
