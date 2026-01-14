@@ -286,7 +286,7 @@ router.post('/:id/upload-qr', isAuthenticated, upload.single('qrCodeImage'), asy
 router.put('/:id/status', isAuthenticated, async (req, res) => {
   try {
     const { status } = req.body;
-    const workshop = Workshop.findById(req.params.id);
+    const workshop = await Workshop.findById(req.params.id);
     
     if (!workshop) {
       return res.status(404).json({
@@ -297,7 +297,7 @@ router.put('/:id/status', isAuthenticated, async (req, res) => {
     
     // Multiple workshops can be active simultaneously
     
-    const updatedWorkshop = Workshop.findByIdAndUpdate(req.params.id, { status });
+    const updatedWorkshop = await Workshop.findByIdAndUpdate(req.params.id, { status });
     
     res.json({
       success: true,
@@ -317,7 +317,7 @@ router.put('/:id/status', isAuthenticated, async (req, res) => {
 // Delete workshop
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
-    const workshop = Workshop.findById(req.params.id);
+    const workshop = await Workshop.findById(req.params.id);
     
     if (!workshop) {
       return res.status(404).json({
@@ -327,7 +327,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     }
     
     // Check actual registration count
-    const allRegistrations = Registration.find({});
+    const allRegistrations = await Registration.find({});
     const registrationCount = allRegistrations.filter(r => r.workshopId === req.params.id).length;
     
     console.log(`Workshop ${workshop._id} has ${registrationCount} registrations`);
@@ -347,7 +347,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       }
     }
     
-    Workshop.findByIdAndDelete(req.params.id);
+    await Workshop.findByIdAndDelete(req.params.id);
     
     res.json({
       success: true,
@@ -370,7 +370,7 @@ router.get('/:id/registrations', isAuthenticated, async (req, res) => {
     const workshopId = req.params.id;
     
     // Get all registrations for this workshop
-    let allRegistrations = Registration.find({});
+    let allRegistrations = await Registration.find({});
     let registrations = allRegistrations.filter(r => r.workshopId === workshopId);
     
     // Apply search filter
