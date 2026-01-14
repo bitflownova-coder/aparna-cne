@@ -218,8 +218,6 @@ async function saveWorkshop(event) {
         const feeValue = document.getElementById('fee').value;
         const creditsValue = document.getElementById('credits').value;
         
-        console.log('Fee value:', feeValue, 'Credits value:', creditsValue);
-        
         const formData = new FormData();
         formData.append('title', document.getElementById('title').value.trim());
         formData.append('description', document.getElementById('description').value.trim());
@@ -273,9 +271,29 @@ function closeModal() {
 
 // Show QR upload modal
 function showQrUploadModal(id) {
+    const workshop = currentWorkshops.find(w => w._id === id);
+    
     document.getElementById('qrWorkshopId').value = id;
     document.getElementById('qrUploadForm').reset();
     document.getElementById('qrFilePreview').style.display = 'none';
+    
+    // Show current QR if exists
+    const currentQrSection = document.getElementById('currentQrSection');
+    const currentQrImage = document.getElementById('currentQrImage');
+    
+    if (workshop && workshop.qrCodeImage) {
+        currentQrImage.src = `/uploads/qr-codes/${workshop.qrCodeImage}`;
+        currentQrSection.style.display = 'block';
+        document.getElementById('qrFile').removeAttribute('required');
+    } else {
+        currentQrSection.style.display = 'none';
+        document.getElementById('qrFile').setAttribute('required', 'required');
+    }
+    
+    // Reset button text
+    document.getElementById('uploadBtnText').textContent = '💾 Save QR Code';
+    document.getElementById('uploadQrBtn').disabled = false;
+    
     document.getElementById('qrUploadModal').style.display = 'block';
 }
 
@@ -288,8 +306,8 @@ function previewQrFile() {
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.innerHTML = `
-                <p style="margin-bottom: 5px; font-size: 12px; color: #666;">Preview:</p>
-                <img src="${e.target.result}" alt="QR Preview">
+                <p style="margin-bottom: 5px; font-size: 12px; color: #666;">New QR Preview:</p>
+                <img src="${e.target.result}" alt="QR Preview" style="max-width: 150px; border-radius: 8px; border: 2px solid #3b82f6;">
             `;
             preview.style.display = 'block';
         };
@@ -300,6 +318,13 @@ function previewQrFile() {
 // Upload QR code
 async function uploadQrCode(event) {
     event.preventDefault();
+    
+    const uploadBtn = document.getElementById('uploadQrBtn');
+    const btnText = document.getElementById('uploadBtnText');
+    
+    // Show loading state
+    uploadBtn.disabled = true;
+    btnText.textContent = '⏳ Saving...';
 
     try {
         const workshopId = document.getElementById('qrWorkshopId').value;
@@ -307,6 +332,8 @@ async function uploadQrCode(event) {
 
         if (!file) {
             showError('Please select a file');
+            uploadBtn.disabled = false;
+            btnText.textContent = '💾 Save QR Code';
             return;
         }
 
@@ -321,15 +348,19 @@ async function uploadQrCode(event) {
         const result = await response.json();
 
         if (result.success) {
-            showSuccess('QR code uploaded successfully');
+            showSuccess('✅ QR code saved successfully! Changes are now live.');
             closeQrModal();
             loadWorkshops();
         } else {
             showError(result.message || 'Failed to upload QR code');
+            uploadBtn.disabled = false;
+            btnText.textContent = '💾 Save QR Code';
         }
     } catch (error) {
         console.error('Error uploading QR:', error);
         showError('Error uploading QR code. Please try again.');
+        document.getElementById('uploadQrBtn').disabled = false;
+        document.getElementById('uploadBtnText').textContent = '💾 Save QR Code';
     }
 }
 

@@ -212,45 +212,23 @@ function setupEventListeners() {
 
 // Load all workshops
 async function loadAllWorkshops() {
-    console.log('=== LOADING WORKSHOPS ===');
     try {
         let workshops = [];
         let errors = [];
 
         // Try getting all workshops from the list endpoint first (preferred)
         try {
-            console.log('Fetching from /api/workshop...');
             const response = await fetch('/api/workshop');
-            console.log('Response status:', response.status);
-            
             if (response.ok) {
                 const result = await response.json();
-                console.log('=== FULL API RESPONSE ===');
-                console.log(JSON.stringify(result, null, 2));
-                
                 if (result.success && Array.isArray(result.data)) {
                     workshops = result.data;
-                    console.log('=== WORKSHOP DETAILS ===');
-                    workshops.forEach((w, i) => {
-                        console.log(`Workshop ${i + 1}:`, {
-                            _id: w._id,
-                            title: w.title,
-                            status: w.status,
-                            fee: w.fee,
-                            feeType: typeof w.fee,
-                            credits: w.credits,
-                            qrCodeImage: w.qrCodeImage,
-                            qrCodeImageType: typeof w.qrCodeImage
-                        });
-                    });
                 }
             } else {
                 errors.push(`Main list endpoint failed: ${response.status}`);
-                console.error('API failed with status:', response.status);
             }
         } catch (e) {
             errors.push(e.message);
-            console.error('Fetch error:', e);
         }
 
         // If that failed or returned nothing, try the specific endpoints (legacy/robustness)
@@ -377,21 +355,8 @@ function displayWorkshopsList() {
 
 // Select workshop
 function selectWorkshop(workshopId) {
-    console.log('=== SELECT WORKSHOP CALLED ===');
-    console.log('Workshop ID:', workshopId);
-    console.log('All workshops available:', allWorkshops.length);
-    
     const workshop = allWorkshops.find(w => w._id === workshopId);
-    
-    if (!workshop) {
-        console.error('Workshop not found in allWorkshops array!');
-        return;
-    }
-    
-    console.log('=== SELECTED WORKSHOP DATA ===');
-    console.log('Full workshop object:', JSON.stringify(workshop, null, 2));
-    console.log('Fee value:', workshop.fee, '| Type:', typeof workshop.fee);
-    console.log('QR Code Image:', workshop.qrCodeImage, '| Type:', typeof workshop.qrCodeImage);
+    if (!workshop) return;
 
     if (workshop.status !== 'active' || (workshop.maxSeats - (workshop.currentRegistrations || 0)) <= 0) {
         showAlert('This workshop is currently not accepting registrations.', 'error');
@@ -419,53 +384,35 @@ function selectWorkshop(workshopId) {
 
 // Update Payment QR Code display
 function updatePaymentQRDisplay(workshop) {
-    console.log('=== UPDATE PAYMENT QR DISPLAY ===');
-    console.log('Workshop received:', workshop);
-    console.log('Fee:', workshop.fee, '| Type:', typeof workshop.fee);
-    console.log('QR Image:', workshop.qrCodeImage, '| Type:', typeof workshop.qrCodeImage);
-    
     const qrDisplay = document.getElementById('qrCodeDisplay');
     const feeDisplay = document.getElementById('displayFee');
-    
-    console.log('qrDisplay element found:', !!qrDisplay);
-    console.log('feeDisplay element found:', !!feeDisplay);
     
     // Handle fee - check for NaN, undefined, null, etc.
     let workshopFee = 0;
     if (workshop.fee !== undefined && workshop.fee !== null && !isNaN(workshop.fee)) {
         workshopFee = Number(workshop.fee);
     }
-    console.log('Final workshopFee after parsing:', workshopFee);
     
     // Update fee display
     if (feeDisplay) {
         feeDisplay.textContent = `₹${workshopFee}`;
-        console.log('Fee display updated to:', feeDisplay.textContent);
     }
     
     // Update QR code image
     if (qrDisplay) {
-        console.log('Checking qrCodeImage:', workshop.qrCodeImage);
-        console.log('Is truthy?', !!workshop.qrCodeImage);
-        
         if (workshop.qrCodeImage) {
             const qrPath = `/uploads/qr-codes/${workshop.qrCodeImage}`;
-            console.log('QR Code path:', qrPath);
-            
             qrDisplay.innerHTML = `
                 <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <img src="${qrPath}" alt="Payment QR Code" 
                          style="max-width: 200px; max-height: 200px; border-radius: 8px;"
-                         onload="console.log('QR image loaded successfully!')"
-                         onerror="console.error('QR image failed to load from:', '${qrPath}'); this.parentElement.innerHTML='<p style=\\'color: #dc2626; padding: 20px;\\'>QR code image not found at: ${qrPath}</p>'">
+                         onerror="this.parentElement.innerHTML='<p style=\\'color: #dc2626; padding: 20px;\\'>QR code not available. Please contact admin.</p>'">
                 </div>
                 <p style="color: #166534; font-weight: 600; margin-top: 10px; font-size: 1rem;">
                     💰 Amount: ₹${workshopFee}
                 </p>
             `;
-            console.log('QR display HTML updated with image');
         } else {
-            console.log('No qrCodeImage - showing warning message');
             qrDisplay.innerHTML = `
                 <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border: 1px solid #fecaca;">
                     <p style="color: #dc2626; margin: 0; font-weight: 500;">
@@ -474,14 +421,9 @@ function updatePaymentQRDisplay(workshop) {
                     <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 0.85rem;">
                         Please contact the organizer for payment details.
                     </p>
-                    <p style="color: #9ca3af; margin: 5px 0 0 0; font-size: 0.75rem;">
-                        Debug: qrCodeImage = ${JSON.stringify(workshop.qrCodeImage)}
-                    </p>
                 </div>
             `;
         }
-    } else {
-        console.error('qrCodeDisplay element not found in DOM!');
     }
 }
 

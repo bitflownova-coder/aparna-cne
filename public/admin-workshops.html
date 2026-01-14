@@ -646,22 +646,30 @@
     <div id="qrUploadModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h2>Upload QR Code</h2>
+                <h2>📱 Upload Payment QR Code</h2>
                 <button class="close-btn" onclick="closeQrModal()">&times;</button>
             </div>
             <form id="qrUploadForm" onsubmit="uploadQrCode(event)">
                 <input type="hidden" id="qrWorkshopId">
                 
+                <div id="currentQrSection" style="display: none; margin-bottom: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border: 1px solid #86efac;">
+                    <p style="margin: 0 0 10px 0; font-weight: 600; color: #166534;">✅ Current QR Code:</p>
+                    <img id="currentQrImage" src="" alt="Current QR" style="max-width: 150px; border-radius: 8px; border: 1px solid #ddd;">
+                </div>
+                
                 <div class="form-group">
-                    <label>QR Code Image *</label>
+                    <label>Select New QR Code Image *</label>
                     <input type="file" id="qrFile" accept="image/jpeg,image/jpg,image/png" required onchange="previewQrFile()">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Supported: JPG, JPEG, PNG (Max 5MB)</small>
                 </div>
 
                 <div id="qrFilePreview" class="qr-preview" style="display: none;"></div>
 
                 <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn-secondary" onclick="closeQrModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Upload</button>
+                    <button type="submit" class="btn-primary" id="uploadQrBtn">
+                        <span id="uploadBtnText">💾 Save QR Code</span>
+                    </button>
                 </div>
             </form>
         </div>
