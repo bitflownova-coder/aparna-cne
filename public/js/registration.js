@@ -300,9 +300,34 @@ function displayWorkshopsList() {
             weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' 
         });
 
-        const seatsLeft = workshop.maxSeats - (workshop.currentRegistrations || 0); // Handle undefined count
-        const percentFilled = Math.min(100, ((workshop.currentRegistrations || 0) / workshop.maxSeats) * 100);
-        const isOpen = workshop.status === 'active' && seatsLeft > 0;
+        const maxSeats = workshop.maxSeats || 100;
+        const currentRegs = workshop.currentRegistrations || 0;
+        const seatsLeft = Math.max(0, maxSeats - currentRegs);
+        const percentFilled = Math.min(100, (currentRegs / maxSeats) * 100);
+        
+        // Determine if registration is open
+        const isActive = workshop.status === 'active';
+        const hasSeats = seatsLeft > 0;
+        const isOpen = isActive && hasSeats;
+        
+        // Determine status text and badge color
+        let statusText = '';
+        let statusClass = '';
+        if (!isActive) {
+            statusText = workshop.status === 'upcoming' ? 'Coming Soon' : 
+                         workshop.status === 'completed' ? 'Completed' : 'Closed';
+            statusClass = 'status-full';
+        } else if (!hasSeats) {
+            statusText = 'Fully Booked';
+            statusClass = 'status-full';
+        } else if (seatsLeft <= 10) {
+            statusText = 'Few Seats Left!';
+            statusClass = 'status-open';
+        } else {
+            statusText = 'Registration Open';
+            statusClass = 'status-open';
+        }
+        
         const workshopFee = workshop.fee || 0;
         const workshopCredits = workshop.credits || 0;
         
@@ -310,8 +335,8 @@ function displayWorkshopsList() {
             <div class="workshop-item">
                 <div class="workshop-top">
                     <span style="font-weight: 700; color: var(--text-light); font-size: 0.9rem;">${dateStr}</span>
-                    <span class="status-badge ${isOpen ? 'status-open' : 'status-full'}">
-                        ${isOpen ? 'Registration Open' : 'Full / Closed'}
+                    <span class="status-badge ${statusClass}">
+                        ${statusText}
                     </span>
                 </div>
                 <div class="workshop-body">
@@ -333,17 +358,18 @@ function displayWorkshopsList() {
                     </div>
 
                     <div class="seats-bar-container">
-                        <div class="seats-bar" style="width: ${percentFilled}%;"></div>
+                        <div class="seats-bar" style="width: ${percentFilled}%; background: ${percentFilled >= 90 ? '#ef4444' : percentFilled >= 70 ? '#f59e0b' : '#22c55e'};"></div>
                     </div>
-                    <div style="text-align: right; font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem;">
-                        <strong>${seatsLeft}</strong> spots left
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem;">
+                        <span>${currentRegs} registered</span>
+                        <strong style="color: ${seatsLeft <= 10 ? '#ef4444' : '#22c55e'};">${seatsLeft} / ${maxSeats} seats left</strong>
                     </div>
 
                     <button class="btn-register" onclick="selectWorkshop('${workshop._id}')" ${!isOpen ? 'disabled' : ''}>
-                        ${isOpen ? 'Register Now' : 'Registration Closed'}
+                        ${isOpen ? 'Register Now' : (workshop.status === 'upcoming' ? 'Coming Soon' : 'Registration Closed')}
                     </button>
                     
-                    ${!isOpen ? `<div style="text-align: center; margin-top: 0.5rem; font-size: 0.8rem; color: var(--danger);">Top Tip: Check back for cancellations or new dates.</div>` : ''}
+                    ${!hasSeats && isActive ? `<div style="text-align: center; margin-top: 0.5rem; font-size: 0.8rem; color: var(--danger);">💡 Tip: Check back for cancellations or new slots.</div>` : ''}
                 </div>
             </div>
         `;
