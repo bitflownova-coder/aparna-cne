@@ -145,13 +145,13 @@ router.post('/register-individual', isAgent, async (req, res) => {
     try {
         const registrationData = req.body;
 
-        // Validate required fields
+        // Validate required fields (email is optional)
         if (!registrationData.workshopId || !registrationData.fullName || 
-            !registrationData.mobileNumber || !registrationData.email ||
+            !registrationData.mobileNumber ||
             !registrationData.mncUID || !registrationData.mncRegistrationNumber) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Missing required fields: workshopId, fullName, mobileNumber, email, mncUID, mncRegistrationNumber' 
+                message: 'Missing required fields: workshopId, fullName, mobileNumber, mncUID, mncRegistrationNumber' 
             });
         }
 
@@ -346,11 +346,11 @@ router.get('/download-template', isAgent, async (req, res) => {
             ['REQUIRED FIELDS (Must be filled):'],
             ['1. fullName - Full name of the participant'],
             ['2. mobileNumber - 10-digit mobile number (without country code)'],
-            ['3. email - Valid email address'],
-            ['4. mncUID - MNC UID number (e.g., MNC001)'],
-            ['5. mncRegistrationNumber - MNC Registration Number (e.g., XVI-5581)'],
+            ['3. mncUID - MNC UID number (e.g., MNC001)'],
+            ['4. mncRegistrationNumber - MNC Registration Number (e.g., XVI-5581)'],
             [''],
             ['OPTIONAL FIELDS:'],
+            ['- email - Email address (optional)'],
             ['- dateOfBirth (Format: YYYY-MM-DD, e.g., 1990-01-15)'],
             ['- gender (Male/Female/Other)'],
             ['- qualification - Education qualification'],
@@ -432,9 +432,9 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
             const rowNumber = i + 2; // Excel row number (header is row 1)
 
             try {
-                // Validate required fields (workshopId comes from form, not row)
+                // Validate required fields (workshopId comes from form, not row) - email is optional
                 if (!row.fullName || !row.mobileNumber || 
-                    !row.email || !row.mncUID || !row.mncRegistrationNumber) {
+                    !row.mncUID || !row.mncRegistrationNumber) {
                     failed++;
                     results.push({
                         row: rowNumber,
@@ -442,7 +442,7 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         mobileNumber: row.mobileNumber || 'N/A',
                         workshopTitle: workshop.title,
                         status: 'error',
-                        message: 'Missing required fields (fullName, mobileNumber, email, mncUID, mncRegistrationNumber)'
+                        message: 'Missing required fields (fullName, mobileNumber, mncUID, mncRegistrationNumber)'
                     });
                     continue;
                 }
