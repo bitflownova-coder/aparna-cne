@@ -1,7 +1,10 @@
 // Admin Dashboard Handler - Mobile-Friendly Version
 let selectedWorkshopId = '';
 let searchTerm = '';
-let sortOrder = 'newest'; // Default to newest first
+let sortOrder = 'oldest'; // Default to oldest first
+let currentPage = 1;
+let pageSize = 50;
+let totalRegistrations = 0;
 
 // Check authentication on load
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,6 +40,7 @@ function setupEventListeners() {
     const searchBox = document.getElementById('searchBox');
     const workshopFilter = document.getElementById('workshopFilter');
     const sortOrderSelect = document.getElementById('sortOrder');
+    const pageSizeSelect = document.getElementById('pageSize');
 
     logoutBtn.addEventListener('click', handleLogout);
     downloadExcelBtn.addEventListener('click', downloadExcel);
@@ -45,6 +49,7 @@ function setupEventListeners() {
     // Workshop filter
     workshopFilter.addEventListener('change', (e) => {
         selectedWorkshopId = e.target.value;
+        currentPage = 1; // Reset to first page
         loadStats(selectedWorkshopId);
         loadRegistrations();
     });
@@ -52,6 +57,14 @@ function setupEventListeners() {
     // Sort order filter
     sortOrderSelect.addEventListener('change', (e) => {
         sortOrder = e.target.value;
+        currentPage = 1; // Reset to first page
+        loadRegistrations();
+    });
+
+    // Page size selector
+    pageSizeSelect.addEventListener('change', (e) => {
+        pageSize = parseInt(e.target.value);
+        currentPage = 1; // Reset to first page
         loadRegistrations();
     });
 
@@ -61,6 +74,7 @@ function setupEventListeners() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             searchTerm = e.target.value;
+            currentPage = 1; // Reset to first page on new search
             loadRegistrations();
         }, 500);
     });
@@ -125,7 +139,8 @@ async function loadRegistrations() {
     listContainer.innerHTML = '<div class="spinner"></div>';
     
     try {
-        let url = `/api/admin/registrations?limit=1000&search=${searchTerm}`;
+        // Build URL with pagination parameters
+        let url = `/api/admin/registrations?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(searchTerm)}&sort=${sortOrder}`;
         if (selectedWorkshopId) {
             url += `&workshopId=${selectedWorkshopId}`;
         }
@@ -135,6 +150,7 @@ async function loadRegistrations() {
         
         if (data.success) {
             let registrations = data.data || [];
+            totalRegistrations = data.total || registrations.length;
             
             // Fetch attendance data
             const attendanceResponse = await fetch('/api/attendance/all');
@@ -154,18 +170,6 @@ async function loadRegistrations() {
                 reg.attendanceStatus = attendanceMap[key] ? 'Present' : 'Applied';
                 reg.attendanceMarkedAt = attendanceMap[key] ? attendanceMap[key].markedAt : null;
                 return reg;
-            });
-            
-            // Sort by registration time (submittedAt)
-            registrations.sort((a, b) => {
-                const dateA = new Date(a.submittedAt);
-                const dateB = new Date(b.submittedAt);
-                
-                if (sortOrder === 'newest') {
-                    return dateB - dateA; // Newest first (descending)
-                } else {
-                    return dateA - dateB; // Oldest first (ascending)
-                }
             });
             
             displayRegistrations(registrations);
@@ -191,7 +195,24 @@ function displayRegistrations(registrations) {
         window.registrationsData[reg._id] = reg;
     });
 
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalRegistrations / pageSize);
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalRegistrations);
+
     let tableHTML = `
+        <div class="pagination-controls">
+            <div class="pagination-info">
+                Showing ${startItem}-${endItem} of ${totalRegistrations} registrations
+            </div>
+            <div class="pagination-buttons">
+                <button class="pagination-btn" onclick="goToFirstPage()" ${currentPage === 1 ? 'disabled' : ''}>⏮️ First</button>
+                <button class="pagination-btn" onclick="goToPrevPage()" ${currentPage === 1 ? 'disabled' : ''}>◀️ Prev</button>
+                <span class="page-indicator">Page ${currentPage} of ${totalPages}</span>
+                <button class="pagination-btn" onclick="goToNextPage()" ${currentPage >= totalPages ? 'disabled' : ''}>Next ▶️</button>
+                <button class="pagination-btn" onclick="goToLastPage()" ${currentPage >= totalPages ? 'disabled' : ''}>Last ⏭️</button>
+            </div>
+        </div>
         <table class="reg-table">
             <thead>
                 <tr>
@@ -231,8 +252,46 @@ function displayRegistrations(registrations) {
         `;
     });
     
-    tableHTML += '</tbody></table>';
+    tableHTML += `</tbody></table>
+        <div class="pagination-controls" style="margin-top: 16px;">
+            <div class="pagination-info">
+                Showing ${startItem}-${endItem} of ${totalRegistrations} registrations
+            </div>
+            <div class="pagination-buttons">
+                <button class="pagination-btn" onclick="goToFirstPage()" ${currentPage === 1 ? 'disabled' : ''}>⏮️ First</button>
+                <button class="pagination-btn" onclick="goToPrevPage()" ${currentPage === 1 ? 'disabled' : ''}>◀️ Prev</button>
+                <span class="page-indicator">Page ${currentPage} of ${totalPages}</span>
+                <button class="pagination-btn" onclick="goToNextPage()" ${currentPage >= totalPages ? 'disabled' : ''}>Next ▶️</button>
+                <button class="pagination-btn" onclick="goToLastPage()" ${currentPage >= totalPages ? 'disabled' : ''}>Last ⏭️</button>
+            </div>
+        </div>`;
     listContainer.innerHTML = tableHTML;
+}
+
+// Pagination navigation functions
+function goToFirstPage() {
+    currentPage = 1;
+    loadRegistrations();
+}
+
+function goToPrevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadRegistrations();
+    }
+}
+
+function goToNextPage() {
+    const totalPages = Math.ceil(totalRegistrations / pageSize);
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadRegistrations();
+    }
+}
+
+function goToLastPage() {
+    currentPage = Math.ceil(totalRegistrations / pageSize);
+    loadRegistrations();
 }
 
 // View payment screenshot

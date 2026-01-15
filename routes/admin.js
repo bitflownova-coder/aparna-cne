@@ -339,7 +339,7 @@ router.post('/bulk-upload', isAuthenticated, excelUpload.single('file'), async (
 // Get all registrations (protected)
 router.get('/registrations', isAuthenticated, async (req, res) => {
   try {
-    const { search, page = 1, workshopId } = req.query;
+    const { search, page = 1, workshopId, sort = 'oldest' } = req.query;
     // Cap the limit to prevent memory issues
     const limit = Math.min(parseInt(req.query.limit) || 50, MAX_PAGINATION_LIMIT);
     
@@ -365,15 +365,15 @@ router.get('/registrations', isAuthenticated, async (req, res) => {
       });
     }
     
-    // Sort by form number in ascending order
+    // Sort by submittedAt date
     allRegistrations.sort((a, b) => {
-      // Extract numeric part from form number (e.g., "1288-0051" -> 51)
-      const getFormNum = (reg) => {
-        if (!reg.formNumber) return 0;
-        const parts = reg.formNumber.split('-');
-        return parts.length > 1 ? parseInt(parts[1], 10) : parseInt(reg.formNumber, 10);
-      };
-      return getFormNum(a) - getFormNum(b);
+      const dateA = new Date(a.submittedAt);
+      const dateB = new Date(b.submittedAt);
+      if (sort === 'newest') {
+        return dateB - dateA; // Newest first (descending)
+      } else {
+        return dateA - dateB; // Oldest first (ascending) - default
+      }
     });
     
     // Pagination
@@ -384,6 +384,7 @@ router.get('/registrations', isAuthenticated, async (req, res) => {
     res.json({
       success: true,
       data: registrations,
+      total: total,
       pagination: {
         total,
         page: parseInt(page),
