@@ -358,11 +358,15 @@ router.get('/registrations', isAuthenticated, async (req, res) => {
       });
     }
     
-    // Sort by submittedAt (newest first)
+    // Sort by form number in ascending order
     allRegistrations.sort((a, b) => {
-      const dateA = new Date(a.submittedAt || a.createdAt);
-      const dateB = new Date(b.submittedAt || b.createdAt);
-      return dateB - dateA;
+      // Extract numeric part from form number (e.g., "1288-0051" -> 51)
+      const getFormNum = (reg) => {
+        if (!reg.formNumber) return 0;
+        const parts = reg.formNumber.split('-');
+        return parts.length > 1 ? parseInt(parts[1], 10) : parseInt(reg.formNumber, 10);
+      };
+      return getFormNum(a) - getFormNum(b);
     });
     
     // Pagination
@@ -512,11 +516,15 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
       registrations = registrations.filter(r => r.workshopId === workshopId);
     }
     
-    // Sort by submittedAt (newest first)
+    // Sort by form number in ascending order (51, 52, 53...)
     registrations.sort((a, b) => {
-      const dateA = new Date(a.submittedAt || a.createdAt);
-      const dateB = new Date(b.submittedAt || b.createdAt);
-      return dateB - dateA;
+      // Extract numeric part from form number (e.g., "1288-0051" -> 51)
+      const getFormNum = (reg) => {
+        if (!reg.formNumber) return 0;
+        const parts = reg.formNumber.split('-');
+        return parts.length > 1 ? parseInt(parts[1], 10) : parseInt(reg.formNumber, 10);
+      };
+      return getFormNum(a) - getFormNum(b);
     });
 
     // Fetch attendance records

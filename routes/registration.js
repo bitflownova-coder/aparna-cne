@@ -91,10 +91,6 @@ router.get('/count', async (req, res) => {
 
 // Submit new registration
 router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
-  console.log('=== REGISTRATION SUBMIT START ===');
-  console.log('Body keys:', Object.keys(req.body));
-  console.log('File:', req.file ? req.file.filename : 'No file');
-  
   try {
     // Get workshopId from request body
     const { workshopId } = req.body;
