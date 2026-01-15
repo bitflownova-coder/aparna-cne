@@ -206,9 +206,14 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     // Get IP address for tracking
     const ipAddress = req.ip || req.connection.remoteAddress;
 
-    // Create or update student record with all comprehensive fields
-    let student = await Student.findByMobile(mobileNumber.trim());
+    // Find existing student by MNC UID first (primary identifier), then by mobile
+    let student = await Student.findByMncUID(mncUID.trim());
     if (!student) {
+      student = await Student.findByMobile(mobileNumber.trim());
+    }
+    
+    if (!student) {
+      // Create new student only if not found by MNC UID or mobile
       student = await Student.create({
         name: fullName.trim(),
         fullName: fullName.trim(),
@@ -227,9 +232,11 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
         mncRegistrationNumber: mncRegistrationNumber.trim()
       });
     } else {
-      // Update student info with all fields
+      // Update existing student with latest data (including mobile number update)
       await Student.update(student._id, {
+        name: fullName.trim(),
         fullName: fullName.trim(),
+        mobileNumber: mobileNumber.trim(),
         email: email.trim(),
         dateOfBirth: dateOfBirth,
         gender: gender,
@@ -243,6 +250,8 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
         mncUID: mncUID.trim(),
         mncRegistrationNumber: mncRegistrationNumber.trim()
       });
+      // Refresh student data after update
+      student = await Student.findById(student._id);
     }
 
     // Create new registration

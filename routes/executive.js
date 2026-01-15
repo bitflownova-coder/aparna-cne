@@ -244,8 +244,15 @@ router.post('/register-individual', isAgent, async (req, res) => {
             }
         }
 
-        // Create or update student record
-        let student = await Student.findByMobile(registrationData.mobileNumber);
+        // Find existing student by MNC UID first, then by mobile
+        let student = null;
+        if (registrationData.mncUID) {
+            student = await Student.findByMncUID(registrationData.mncUID.trim());
+        }
+        if (!student) {
+            student = await Student.findByMobile(registrationData.mobileNumber);
+        }
+        
         if (!student) {
             student = await Student.create({
                 name: registrationData.fullName,
@@ -260,12 +267,16 @@ router.post('/register-individual', isAgent, async (req, res) => {
                 address: registrationData.address,
                 city: registrationData.city,
                 state: registrationData.state,
-                pinCode: registrationData.pinCode
+                pinCode: registrationData.pinCode,
+                mncUID: registrationData.mncUID,
+                mncRegistrationNumber: registrationData.mncRegistrationNumber
             });
         } else {
-            // Update student info
+            // Update existing student with latest data
             await Student.update(student._id, {
+                name: registrationData.fullName,
                 fullName: registrationData.fullName,
+                mobileNumber: registrationData.mobileNumber,
                 email: registrationData.email,
                 dateOfBirth: registrationData.dateOfBirth,
                 gender: registrationData.gender,
@@ -275,7 +286,9 @@ router.post('/register-individual', isAgent, async (req, res) => {
                 address: registrationData.address,
                 city: registrationData.city,
                 state: registrationData.state,
-                pinCode: registrationData.pinCode
+                pinCode: registrationData.pinCode,
+                mncUID: registrationData.mncUID,
+                mncRegistrationNumber: registrationData.mncRegistrationNumber
             });
         }
 
@@ -571,8 +584,15 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         });
                     }
                 } else {
-                    // Create or update student record
-                    let student = await Student.findByMobile(String(row.mobileNumber));
+                    // Find existing student by MNC UID first, then by mobile
+                    let student = null;
+                    if (row.mncUID) {
+                        student = await Student.findByMncUID(String(row.mncUID).trim());
+                    }
+                    if (!student) {
+                        student = await Student.findByMobile(String(row.mobileNumber));
+                    }
+                    
                     if (!student) {
                         student = await Student.create({
                             name: row.fullName,
@@ -586,12 +606,16 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                             address: row.address || null,
                             city: row.city || null,
                             state: row.state || null,
-                            pinCode: row.pinCode || null
+                            pinCode: row.pinCode || null,
+                            mncUID: row.mncUID ? String(row.mncUID).trim() : null,
+                            mncRegistrationNumber: row.mncRegistrationNumber ? String(row.mncRegistrationNumber).trim() : null
                         });
                     } else {
-                        // Update student info
+                        // Update existing student with latest data
                         await Student.update(student._id, {
+                            name: row.fullName,
                             fullName: row.fullName,
+                            mobileNumber: String(row.mobileNumber),
                             email: row.email,
                             dateOfBirth: row.dateOfBirth || null,
                             gender: row.gender || null,
@@ -600,7 +624,9 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                             address: row.address || null,
                             city: row.city || null,
                             state: row.state || null,
-                            pinCode: row.pinCode || null
+                            pinCode: row.pinCode || null,
+                            mncUID: row.mncUID ? String(row.mncUID).trim() : null,
+                            mncRegistrationNumber: row.mncRegistrationNumber ? String(row.mncRegistrationNumber).trim() : null
                         });
                     }
                     
