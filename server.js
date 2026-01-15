@@ -97,6 +97,37 @@ app.get('/favicon.ico', (req, res) => {
   try {
     await initDatabase();
     console.log('✅ Database initialized successfully');
+    
+    // Schedule cleanup job - runs daily at 3 AM
+    const scheduleCleanup = () => {
+      const now = new Date();
+      const target = new Date();
+      target.setHours(3, 0, 0, 0); // 3 AM
+      
+      // If it's past 3 AM today, schedule for tomorrow
+      if (now >= target) {
+        target.setDate(target.getDate() + 1);
+      }
+      
+      const msUntilTarget = target.getTime() - now.getTime();
+      
+      setTimeout(async () => {
+        try {
+          const cleanup = require('./utils/cleanup');
+          await cleanup.runAllCleanup();
+        } catch (err) {
+          console.error('Scheduled cleanup error:', err);
+        }
+        // Schedule next cleanup
+        scheduleCleanup();
+      }, msUntilTarget);
+      
+      console.log(`📅 Cleanup scheduled for ${target.toLocaleString()}`);
+    };
+    
+    // Start the cleanup scheduler
+    scheduleCleanup();
+    
   } catch (error) {
     console.error('❌ Database initialization failed:', error.message);
     process.exit(1);

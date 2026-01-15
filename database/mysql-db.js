@@ -48,6 +48,31 @@ async function initDatabase() {
       agentId INT DEFAULT 0
     )`,
     
+    // Form number counters table (for atomic form number generation per workshop)
+    `CREATE TABLE IF NOT EXISTS form_number_counters (
+      workshopId VARCHAR(50) PRIMARY KEY,
+      lastNumber INT DEFAULT 50,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
+    
+    // Audit logs table
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+      _id VARCHAR(50) PRIMARY KEY,
+      action VARCHAR(100) NOT NULL,
+      entityType VARCHAR(50) NOT NULL,
+      entityId VARCHAR(50),
+      userId VARCHAR(50),
+      username VARCHAR(100),
+      userRole VARCHAR(50),
+      details JSON,
+      ipAddress VARCHAR(100),
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_action (action),
+      INDEX idx_entityType (entityType),
+      INDEX idx_userId (userId),
+      INDEX idx_createdAt (createdAt)
+    )`,
+    
     // Users table (admin, executives, attendance staff)
     `CREATE TABLE IF NOT EXISTS users (
       _id VARCHAR(50) PRIMARY KEY,
@@ -430,8 +455,29 @@ const Workshop = {
   
   incrementRegistrationCount: async (id) => {
     const pool = await getPool();
+    // Increment count
     await pool.query(
       'UPDATE workshops SET currentRegistrations = currentRegistrations + 1, updatedAt = NOW() WHERE _id = ?',
+      [id]
+    );
+    // Auto-update status to 'full' if maxSeats reached
+    await pool.query(
+      "UPDATE workshops SET status = 'full' WHERE _id = ? AND currentRegistrations >= maxSeats AND status = 'active'",
+      [id]
+    );
+    return Workshop.findById(id);
+  },
+  
+  decrementRegistrationCount: async (id) => {
+    const pool = await getPool();
+    // Decrement count (don't go below 0)
+    await pool.query(
+      'UPDATE workshops SET currentRegistrations = GREATEST(currentRegistrations - 1, 0), updatedAt = NOW() WHERE _id = ?',
+      [id]
+    );
+    // Auto-revert status from 'full' to 'active' if there's now space
+    await pool.query(
+      "UPDATE workshops SET status = 'active' WHERE _id = ? AND currentRegistrations < maxSeats AND status = 'full'",
       [id]
     );
     return Workshop.findById(id);
@@ -571,6 +617,15 @@ const Student = {
     return Student.findById(id);
   },
   
+  decrementWorkshopCount: async (id) => {
+    const pool = await getPool();
+    await pool.query(
+      'UPDATE students SET totalWorkshops = GREATEST(totalWorkshops - 1, 0), updatedAt = NOW() WHERE _id = ?',
+      [id]
+    );
+    return Student.findById(id);
+  },
+  
   // Alias methods for compatibility
   update: async (id, updates) => {
     return Student.findByIdAndUpdate(id, updates);
@@ -703,29 +758,55 @@ const Registration = {
   
   getNextFormNumber: async (workshopId) => {
     const pool = await getPool();
+    const connection = await pool.getConnection();
     
-    // Get the workshop's cneCpdNumber for the form prefix
-    let prefix = 'REG';
-    if (workshopId) {
-      const [workshopRows] = await pool.query(
-        'SELECT cneCpdNumber FROM workshops WHERE _id = ?',
+    try {
+      // Use transaction with row lock for atomic form number generation
+      await connection.beginTransaction();
+      
+      // Get the workshop's cneCpdNumber for the form prefix
+      let prefix = 'REG';
+      if (workshopId) {
+        const [workshopRows] = await connection.query(
+          'SELECT cneCpdNumber FROM workshops WHERE _id = ?',
+          [workshopId]
+        );
+        if (workshopRows.length > 0 && workshopRows[0].cneCpdNumber) {
+          prefix = workshopRows[0].cneCpdNumber;
+        }
+      }
+      
+      // Insert or update the counter atomically with row lock
+      // Start from 50 so first registration gets 51
+      await connection.query(
+        `INSERT INTO form_number_counters (workshopId, lastNumber) VALUES (?, 50) 
+         ON DUPLICATE KEY UPDATE lastNumber = lastNumber`,
         [workshopId]
       );
-      if (workshopRows.length > 0 && workshopRows[0].cneCpdNumber) {
-        prefix = workshopRows[0].cneCpdNumber;
-      }
+      
+      // Get and increment in one atomic operation with row lock
+      await connection.query(
+        'UPDATE form_number_counters SET lastNumber = lastNumber + 1 WHERE workshopId = ?',
+        [workshopId]
+      );
+      
+      const [rows] = await connection.query(
+        'SELECT lastNumber FROM form_number_counters WHERE workshopId = ?',
+        [workshopId]
+      );
+      
+      await connection.commit();
+      
+      const formNumber = rows[0].lastNumber;
+      
+      // Format: {cneCpdNumber}-{registrationNumber} e.g., 1001-0051, CPD-0052
+      return `${prefix}-${String(formNumber).padStart(4, '0')}`;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
-    
-    // Count registrations for this workshop
-    const [rows] = await pool.query(
-      'SELECT COUNT(*) as count FROM registrations WHERE workshopId = ?',
-      [workshopId]
-    );
-    // Start form numbers from 51 (count + 51)
-    const count = rows[0].count + 51;
-    
-    // Format: {cneCpdNumber}-{registrationNumber} e.g., 1001-0051, CPD-0052
-    return `${prefix}-${String(count).padStart(4, '0')}`;
   }
 };
 
@@ -929,6 +1010,68 @@ const Agent = {
   }
 };
 
+// ==================== AUDIT LOG OPERATIONS ====================
+let auditLogCounter = 0;
+
+const AuditLog = {
+  create: async (data) => {
+    const pool = await getPool();
+    auditLogCounter++;
+    const id = 'LOG' + Date.now() + String(auditLogCounter).padStart(4, '0');
+    
+    const log = {
+      _id: id,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId || null,
+      userId: data.userId || null,
+      username: data.username || null,
+      userRole: data.userRole || null,
+      details: data.details ? JSON.stringify(data.details) : null,
+      ipAddress: data.ipAddress || null,
+      createdAt: new Date()
+    };
+    
+    const fields = Object.keys(log);
+    const placeholders = fields.map(() => '?').join(', ');
+    const values = fields.map(f => log[f]);
+    
+    await pool.query(
+      `INSERT INTO audit_logs (${fields.join(', ')}) VALUES (${placeholders})`,
+      values
+    );
+    
+    return log;
+  },
+  
+  find: async (query = {}) => {
+    const pool = await getPool();
+    let sql = 'SELECT * FROM audit_logs';
+    const values = [];
+    
+    if (Object.keys(query).length > 0) {
+      const conditions = Object.keys(query).map(key => {
+        values.push(query[key]);
+        return `${key} = ?`;
+      });
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    sql += ' ORDER BY createdAt DESC LIMIT 1000';
+    const [rows] = await pool.query(sql, values);
+    return rows;
+  },
+  
+  findByEntity: async (entityType, entityId) => {
+    const pool = await getPool();
+    const [rows] = await pool.query(
+      'SELECT * FROM audit_logs WHERE entityType = ? AND entityId = ? ORDER BY createdAt DESC',
+      [entityType, entityId]
+    );
+    return rows;
+  }
+};
+
 module.exports = {
   initDatabase,
   getPool,
@@ -937,5 +1080,6 @@ module.exports = {
   Student,
   Registration,
   Attendance,
-  Agent
+  Agent,
+  AuditLog
 };

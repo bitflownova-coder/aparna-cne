@@ -6,18 +6,23 @@ const { isAuthenticated, isAdmin, verifyAdminCredentials, verifyUserCredentials 
 
 // Conditional database import
 const useMySQL = process.env.USE_MYSQL === 'true';
-let Student, Agent, Attendance;
+let Student, Agent, Attendance, AuditLog;
 if (useMySQL) {
   const mysqlDb = require('../database/mysql-db');
   Student = mysqlDb.Student;
   Agent = mysqlDb.Agent;
   Attendance = mysqlDb.Attendance;
+  AuditLog = mysqlDb.AuditLog;
 } else {
   const localDb = require('../localdb');
   Student = localDb.Student;
   Agent = localDb.Agent;
   Attendance = localDb.Attendance;
+  AuditLog = { create: async () => {} }; // Stub for local dev
 }
+
+// Constants
+const MAX_PAGINATION_LIMIT = 500; // Maximum records per page
 
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -334,7 +339,9 @@ router.post('/bulk-upload', isAuthenticated, excelUpload.single('file'), async (
 // Get all registrations (protected)
 router.get('/registrations', isAuthenticated, async (req, res) => {
   try {
-    const { search, page = 1, limit = 50, workshopId } = req.query;
+    const { search, page = 1, workshopId } = req.query;
+    // Cap the limit to prevent memory issues
+    const limit = Math.min(parseInt(req.query.limit) || 50, MAX_PAGINATION_LIMIT);
     
     // Get all registrations (local DB doesn't support complex queries)
     let allRegistrations = await Registration.find({});
@@ -688,8 +695,10 @@ router.delete('/registrations/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Registration not found' });
     }
 
-    // Store workshopId before deletion
+    // Store info before deletion for audit and cleanup
     const workshopId = record.workshopId;
+    const studentId = record.studentId;
+    const recordCopy = { ...record };
 
     // Delete associated payment screenshot if exists
     if (record.paymentScreenshot) {
@@ -702,17 +711,46 @@ router.delete('/registrations/:id', isAuthenticated, async (req, res) => {
     // Use the correct delete method for our database wrapper
     await Registration.deleteById(id);
 
-    // Decrement workshop registration count
+    // Decrement workshop registration count using the new method
     if (workshopId) {
-      const Workshop = require('../models/Workshop');
-      const workshop = await Workshop.findById(workshopId);
-      if (workshop && workshop.currentRegistrations > 0) {
-        await Workshop.update(workshopId, { 
-          currentRegistrations: workshop.currentRegistrations - 1 
-        });
-        console.log(`Decremented registration count for workshop ${workshopId} to ${workshop.currentRegistrations - 1}`);
+      const WorkshopModel = require('../models/Workshop');
+      // Use decrementRegistrationCount if available (MySQL), otherwise manual update
+      if (typeof WorkshopModel.decrementRegistrationCount === 'function') {
+        await WorkshopModel.decrementRegistrationCount(workshopId);
+      } else {
+        const workshop = await WorkshopModel.findById(workshopId);
+        if (workshop && workshop.currentRegistrations > 0) {
+          await WorkshopModel.update(workshopId, { 
+            currentRegistrations: workshop.currentRegistrations - 1 
+          });
+        }
       }
     }
+
+    // Decrement student workshop count
+    if (studentId) {
+      if (typeof Student.decrementWorkshopCount === 'function') {
+        await Student.decrementWorkshopCount(studentId);
+      }
+    }
+
+    // Create audit log
+    await AuditLog.create({
+      action: 'DELETE_REGISTRATION',
+      entityType: 'registration',
+      entityId: id,
+      userId: req.session.userId || null,
+      username: req.session.username || 'admin',
+      userRole: req.session.role || 'admin',
+      details: {
+        formNumber: recordCopy.formNumber,
+        fullName: recordCopy.fullName,
+        mncUID: recordCopy.mncUID,
+        workshopId: workshopId,
+        mobileNumber: recordCopy.mobileNumber
+      },
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
 
     res.json({ success: true, message: 'Registration deleted successfully' });
   } catch (error) {
@@ -1226,7 +1264,9 @@ router.post('/students/bulk-import', isAdmin, excelUpload.array('files', 50), as
 // Get all students (with pagination and search)
 router.get('/students', isAuthenticated, async (req, res) => {
   try {
-    const { page = 1, limit = 50, search = '' } = req.query;
+    const { page = 1, search = '' } = req.query;
+    // Cap the limit to prevent memory issues
+    const limit = Math.min(parseInt(req.query.limit) || 50, MAX_PAGINATION_LIMIT);
     let students = await Student.find({});
 
     // Search filter
@@ -1281,6 +1321,61 @@ router.delete('/students/all', isAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error deleting students:', error);
     res.status(500).json({ success: false, message: 'Error deleting students' });
+  }
+});
+
+// ==================== CLEANUP ROUTES ====================
+
+// Run cleanup manually (admin only)
+router.post('/cleanup', isAdmin, async (req, res) => {
+  try {
+    const cleanup = require('../utils/cleanup');
+    const results = await cleanup.runAllCleanup();
+    
+    // Log the cleanup action
+    await AuditLog.create({
+      action: 'MANUAL_CLEANUP',
+      entityType: 'system',
+      userId: req.session.userId || null,
+      username: req.session.username || 'admin',
+      userRole: req.session.role || 'admin',
+      details: results,
+      ipAddress: req.ip || req.connection.remoteAddress
+    });
+    
+    res.json({
+      success: true,
+      message: 'Cleanup completed',
+      results: results
+    });
+  } catch (error) {
+    console.error('Manual cleanup error:', error);
+    res.status(500).json({ success: false, message: 'Cleanup failed: ' + error.message });
+  }
+});
+
+// Get audit logs (admin only)
+router.get('/audit-logs', isAdmin, async (req, res) => {
+  try {
+    const { entityType, action, limit = 100 } = req.query;
+    
+    let query = {};
+    if (entityType) query.entityType = entityType;
+    if (action) query.action = action;
+    
+    const logs = await AuditLog.find(query);
+    
+    // Limit results
+    const limitedLogs = logs.slice(0, Math.min(parseInt(limit), 1000));
+    
+    res.json({
+      success: true,
+      data: limitedLogs,
+      total: logs.length
+    });
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching audit logs' });
   }
 });
 

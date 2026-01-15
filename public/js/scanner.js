@@ -129,22 +129,31 @@ function handleQRCodeScanned(data) {
 }
 
 async function submitAttendance() {
-    const identifier = document.getElementById('attendanceMncUID').value.trim();
+    const identifier = document.getElementById('attendanceMncUID').value.trim().toUpperCase();
     
     if (!identifier) {
-        alert('⚠️ Please enter your Mobile Number or MNC Registration Number');
+        alert('⚠️ Please enter your MNC Registration Number');
         document.getElementById('attendanceMncUID').focus();
         return;
     }
     
-    // Basic validation
-    const isMobile = /^[0-9]{10}$/.test(identifier);
-    const isMNCReg = /^[A-Z]+-[0-9]+$/.test(identifier);
+    // Parse MNC Registration Number format (Roman-Number like XVI-5581)
+    let mncRegRoman = '';
+    let mncRegNumber = '';
     
-    if (!isMobile && !isMNCReg) {
-        alert('⚠️ Please enter a valid format:\n• Mobile: 10 digits (e.g., 9876543210)\n• MNC Registration: Roman-Number (e.g., XVI-5581)');
-        document.getElementById('attendanceMncUID').focus();
-        return;
+    // Check if it's in MNC Registration format (ROMAN-NUMBER)
+    const mncRegMatch = identifier.match(/^([IVXLCDM]+)-(\d+)$/);
+    if (mncRegMatch) {
+        mncRegRoman = mncRegMatch[1];
+        mncRegNumber = mncRegMatch[2];
+    } else {
+        // Check if it's a mobile number
+        const isMobile = /^[0-9]{10}$/.test(identifier);
+        if (!isMobile) {
+            alert('⚠️ Please enter a valid MNC Registration Number format:\n• Example: XVI-5581, XII-12345\n• Or 10-digit Mobile Number');
+            document.getElementById('attendanceMncUID').focus();
+            return;
+        }
     }
     
     if (!scannedData || !scannedData.workshopId) {
@@ -169,6 +178,8 @@ async function submitAttendance() {
             body: JSON.stringify({
                 workshopId: scannedData.workshopId,
                 identifier: identifier,
+                mncRegRoman: mncRegRoman,
+                mncRegNumber: mncRegNumber,
                 timestamp: Date.now()
             })
         });

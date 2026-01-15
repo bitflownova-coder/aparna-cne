@@ -22,6 +22,7 @@ const Workshop = {
   getUpcomingWorkshops: () => DB.getUpcomingWorkshops(),
   getLatestWorkshop: () => DB.getLatestWorkshop(),
   incrementRegistrationCount: (id) => DB.incrementRegistrationCount(id),
+  decrementRegistrationCount: (id) => DB.decrementRegistrationCount ? DB.decrementRegistrationCount(id) : null,
   
   // Alias methods
   update: (id, updates) => DB.update ? DB.update(id, updates) : DB.findByIdAndUpdate(id, updates),

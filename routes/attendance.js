@@ -93,19 +93,25 @@ function requireAttendanceAuth(req, res, next) {
 // Mark attendance
 router.post('/mark', async (req, res) => {
     try {
-        const { workshopId, identifier, timestamp } = req.body; // identifier can be mobile or MNC reg number
+        const { workshopId, identifier, mncRegRoman, mncRegNumber, timestamp } = req.body;
+        
+        // Build MNC Registration Number from parts if provided
+        let searchIdentifier = identifier;
+        if (mncRegRoman && mncRegNumber) {
+            searchIdentifier = `${mncRegRoman}-${mncRegNumber}`;
+        }
         
         // Create device fingerprint from multiple sources for better uniqueness
         const userAgent = req.headers['user-agent'] || '';
         const ipAddress = req.ip || req.connection.remoteAddress || '';
         const deviceFingerprint = `${userAgent}_${ipAddress}`;
         
-        console.log('Attendance attempt:', { workshopId, identifier, deviceFingerprint });
+        console.log('Attendance attempt:', { workshopId, searchIdentifier, deviceFingerprint });
         
-        if (!workshopId || !identifier) {
+        if (!workshopId || !searchIdentifier) {
             return res.json({
                 success: false,
-                message: 'Workshop ID and Mobile Number/MNC Registration Number are required'
+                message: 'Workshop ID and MNC Registration Number are required'
             });
         }
         
@@ -118,17 +124,28 @@ router.post('/mark', async (req, res) => {
             });
         }
         
-        // Verify student is registered - search by mobile number or MNC registration number
+        // Verify student is registered - search by MNC registration number (exact match or partial)
         const allRegistrations = await db.Registration.find({});
-        const registration = allRegistrations.find(reg => 
-            (reg.mobileNumber === identifier || reg.mncRegistrationNumber === identifier) && 
-            reg.workshopId === workshopId
-        );
+        const registration = allRegistrations.find(reg => {
+            if (reg.workshopId !== workshopId) return false;
+            
+            // Match by MNC Registration Number (primary)
+            if (reg.mncRegistrationNumber) {
+                const regNum = reg.mncRegistrationNumber.toUpperCase().trim();
+                const searchNum = searchIdentifier.toUpperCase().trim();
+                if (regNum === searchNum) return true;
+            }
+            
+            // Fallback: match by mobile number
+            if (reg.mobileNumber === searchIdentifier) return true;
+            
+            return false;
+        });
         
         if (!registration) {
             return res.json({
                 success: false,
-                message: 'No registration found for this Mobile Number/MNC Registration Number in this workshop'
+                message: 'No registration found for this MNC Registration Number in this workshop. Please check the registration number format (e.g., XII-12345)'
             });
         }
         
