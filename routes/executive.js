@@ -300,6 +300,9 @@ router.post('/register-individual', isAgent, async (req, res) => {
 
         const created = await Registration.create(newRegistration);
         
+        // Increment workshop registration count
+        await Workshop.incrementRegistrationCount(workshop._id);
+        
         // Increment student workshop count
         await Student.incrementWorkshopCount(student._id);
 
@@ -634,6 +637,9 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                     };
 
                     await Registration.create(newRegistration);
+                    
+                    // Increment workshop registration count
+                    await Workshop.incrementRegistrationCount(workshop._id);
                     
                     // Increment student workshop count
                     await Student.incrementWorkshopCount(student._id);

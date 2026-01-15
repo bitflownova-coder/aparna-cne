@@ -800,6 +800,35 @@ router.post('/students/fix-names', isAdmin, async (req, res) => {
   }
 });
 
+// Recalculate workshop registration counts
+router.post('/workshops/recalculate-counts', isAdmin, async (req, res) => {
+  try {
+    const workshops = await Workshop.find({});
+    const registrations = await Registration.find({});
+    let updatedCount = 0;
+    
+    for (const workshop of workshops) {
+      // Count registrations for this workshop
+      const count = registrations.filter(r => r.workshopId === workshop._id).length;
+      
+      // Update workshop if count is different
+      if (workshop.currentRegistrations !== count) {
+        await Workshop.update(workshop._id, { currentRegistrations: count });
+        updatedCount++;
+        console.log(`Updated workshop ${workshop.title}: ${workshop.currentRegistrations} -> ${count}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Updated ${updatedCount} workshop registration counts`
+    });
+  } catch (error) {
+    console.error('Error recalculating workshop counts:', error);
+    res.status(500).json({ success: false, message: 'Error recalculating counts' });
+  }
+});
+
 // Get student by ID with registration history
 router.get('/students/:id', isAdmin, async (req, res) => {
   try {
