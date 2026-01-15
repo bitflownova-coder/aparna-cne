@@ -651,7 +651,7 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
     const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     // Generate filename based on filter
-    const workshop = workshopId ? Workshop.findById(workshopId) : null;
+    const workshop = workshopId ? await Workshop.findById(workshopId) : null;
     const workshopName = workshop ? `${workshop.title.replace(/[^a-zA-Z0-9]/g, '_')}_` : 'All_Workshops_';
     const filename = `CNE_Registrations_${workshopName}${new Date().toISOString().split('T')[0]}.xlsx`;
     
