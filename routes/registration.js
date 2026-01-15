@@ -92,18 +92,13 @@ router.get('/count', async (req, res) => {
 // Submit new registration
 router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
   try {
-    console.log('Registration submission received');
-    console.log('Body:', JSON.stringify(req.body));
-    console.log('File:', req.file ? req.file.filename : 'No file');
-    
     // Get workshopId from request body
     const { workshopId } = req.body;
     
     if (!workshopId) {
-      console.log('Error: Workshop ID missing');
       return res.status(400).json({
         success: false,
-        message: 'Workshop ID is required'
+        message: 'Please select a workshop to register for'
       });
     }
 
@@ -112,7 +107,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     if (!workshop) {
       return res.status(404).json({
         success: false,
-        message: 'Workshop not found'
+        message: 'The selected workshop was not found. Please refresh the page and try again.'
       });
     }
 
@@ -120,7 +115,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     if (workshop.status !== 'active') {
       return res.status(400).json({
         success: false,
-        message: `Registration is not available. Workshop status: ${workshop.status}`
+        message: 'Registration for this workshop is currently not available. Please check back later.'
       });
     }
 
@@ -128,7 +123,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     if (workshop.currentRegistrations >= workshop.maxSeats) {
       return res.status(400).json({
         success: false,
-        message: 'Registration closed. All seats are filled.'
+        message: 'Sorry, all seats for this workshop are filled. Please select another workshop.'
       });
     }
 
@@ -140,6 +135,25 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
             email, dateOfBirth, gender, qualification, organization, 
             experience, city, state, pinCode } = req.body;
 
+    // Field name mapping for user-friendly error messages
+    const fieldLabels = {
+      fullName: 'Full Name',
+      mncUID: 'MNC UID',
+      mncRegistrationNumber: 'MNC Registration Number',
+      mobileNumber: 'Mobile Number',
+      address: 'Address',
+      paymentUTR: 'Payment UTR/Transaction Number',
+      email: 'Email',
+      dateOfBirth: 'Date of Birth',
+      gender: 'Gender',
+      qualification: 'Qualification',
+      organization: 'Organization',
+      experience: 'Experience',
+      city: 'City',
+      state: 'State',
+      pinCode: 'Pin Code'
+    };
+
     // Check each field and return specific error
     const requiredFields = {
       fullName, mncUID, mncRegistrationNumber, mobileNumber, address, paymentUTR,
@@ -148,21 +162,19 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     
     const missingFields = Object.entries(requiredFields)
       .filter(([key, value]) => !value || value === '')
-      .map(([key]) => key);
+      .map(([key]) => fieldLabels[key] || key);
     
     if (missingFields.length > 0) {
-      console.log('Missing fields:', missingFields);
-      console.log('Received body:', req.body);
       return res.status(400).json({
         success: false,
-        message: `Missing required fields: ${missingFields.join(', ')}`
+        message: `Please fill in the following required fields: ${missingFields.join(', ')}`
       });
     }
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Payment screenshot is required'
+        message: 'Please upload your payment screenshot'
       });
     }
 
@@ -174,7 +186,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     if (existingRegistration) {
       return res.status(400).json({
         success: false,
-        message: 'This MNC UID is already registered for this workshop'
+        message: 'You have already registered for this workshop with this MNC UID'
       });
     }
 
@@ -187,7 +199,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
     if (utrExists) {
       return res.status(400).json({
         success: false,
-        message: 'This UTR/Transaction number has already been used for another registration'
+        message: 'This UTR/Transaction number has already been used. Please check your UTR number or contact support if you believe this is an error.'
       });
     }
 
