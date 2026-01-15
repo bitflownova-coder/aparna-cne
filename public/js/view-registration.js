@@ -389,7 +389,7 @@ async function generatePDF() {
     // Header
     doc.setFontSize(18);
     doc.setTextColor(95, 37, 159);
-    doc.text('SAI CARE GROUP OF INSTITUTES', 105, 20, { align: 'center' });
+    doc.text('APARNA INSTITUTE OF NURSING EDUCATION', 105, 20, { align: 'center' });
     
     doc.setFontSize(14);
     doc.text('CNE Registration 2025', 105, 30, { align: 'center' });
@@ -531,7 +531,7 @@ async function generatePDF() {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text('© 2025 Sai Care Group of Institutes. All rights reserved.', 105, 285, { align: 'center' });
+    doc.text('© 2026 Aparna Institute of Nursing Education. All rights reserved.', 105, 285, { align: 'center' });
 
     // Save PDF
     doc.save(`CNE_Registration_${currentRegistration.mncUID}.pdf`);

@@ -1,7 +1,7 @@
 {
-  "name": "sai-care-cne-registration",
+  "name": "aparna-cne-registration",
   "version": "1.0.0",
-  "description": "Registration system for Sai Care Group of Institutes - CNE",
+  "description": "Registration system for Aparna Institute of Nursing Education - CNE",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,7 @@
     "education",
     "payment"
   ],
-  "author": "Sai Care Group",
+  "author": "Aparna Institute",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",

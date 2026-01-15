@@ -12,7 +12,7 @@ Recommended specifications:
 - Format: PNG
 - Size: 512x512 pixels (or larger)
 - Transparent background (optional)
-- Contains: SAI CARE GROUP OF INSTITUTES branding
+- Contains: APARNA INSTITUTE OF NURSING EDUCATION branding
 
 The application is currently looking for:
 /assest/logo.png

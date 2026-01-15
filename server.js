@@ -68,7 +68,7 @@ app.use('/api/', limiter);
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'SaiCareGroup_CNE_Secret_Key_2025_Secure',
+  secret: process.env.SESSION_SECRET || 'Aparna_CNE_Secret_Key_2026_Secure',
   resave: true,
   saveUninitialized: true,
   cookie: {
