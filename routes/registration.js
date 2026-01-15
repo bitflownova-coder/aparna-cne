@@ -92,10 +92,15 @@ router.get('/count', async (req, res) => {
 // Submit new registration
 router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
   try {
+    console.log('Registration submission received');
+    console.log('Body:', JSON.stringify(req.body));
+    console.log('File:', req.file ? req.file.filename : 'No file');
+    
     // Get workshopId from request body
     const { workshopId } = req.body;
     
     if (!workshopId) {
+      console.log('Error: Workshop ID missing');
       return res.status(400).json({
         success: false,
         message: 'Workshop ID is required'
