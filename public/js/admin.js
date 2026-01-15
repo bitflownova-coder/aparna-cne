@@ -74,7 +74,8 @@ async function loadWorkshops() {
         
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
-            const workshops = result.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Sort by date ascending (closest upcoming workshop first)
+            const workshops = result.data.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');
@@ -404,10 +405,13 @@ async function deleteRegistration(id) {
 // Download Excel
 async function downloadExcel() {
     try {
-        let url = '/api/admin/export-excel';
-        if (selectedWorkshopId) {
-            url += `?workshopId=${selectedWorkshopId}`;
+        // Require workshop selection for download
+        if (!selectedWorkshopId) {
+            showAlert('Please select a workshop first to download its registrations', 'error');
+            return;
         }
+        
+        let url = `/api/admin/export-excel?workshopId=${selectedWorkshopId}`;
         
         const response = await fetch(url);
         

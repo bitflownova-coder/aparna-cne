@@ -70,8 +70,8 @@ router.get('/', isAuthenticated, async (req, res) => {
       );
     }
     
-    // Sort by date descending
-    workshops.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort by date ascending (closest upcoming workshop first)
+    workshops.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     res.json({
       success: true,

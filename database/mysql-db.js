@@ -721,9 +721,10 @@ const Registration = {
       'SELECT COUNT(*) as count FROM registrations WHERE workshopId = ?',
       [workshopId]
     );
-    const count = rows[0].count + 1;
+    // Start form numbers from 51 (count + 51)
+    const count = rows[0].count + 51;
     
-    // Format: {cneCpdNumber}-{registrationNumber} e.g., 1001-0001, CPD-0002
+    // Format: {cneCpdNumber}-{registrationNumber} e.g., 1001-0051, CPD-0052
     return `${prefix}-${String(count).padStart(4, '0')}`;
   }
 };
