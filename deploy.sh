@@ -1,5 +1,5 @@
 #!/bin/bash
-# Safe Deployment Script - Preserves .env
+# Safe Deployment Script - Preserves .env and uploads
 
 echo "🚀 Starting Safe Deployment..."
 
@@ -16,7 +16,16 @@ echo "📥 Pulling latest code..."
 git checkout main
 git pull origin main
 
-# Step 3: Restore .env
+# Step 3: Ensure uploads symlink exists (points to persistent storage)
+if [ ! -L uploads ]; then
+    rm -rf uploads
+    ln -s ../persistent_uploads uploads
+    echo "✅ Created uploads symlink"
+else
+    echo "✅ Uploads symlink already exists"
+fi
+
+# Step 4: Restore .env
 if [ -f .env.backup ]; then
     cp .env.backup .env
     rm .env.backup

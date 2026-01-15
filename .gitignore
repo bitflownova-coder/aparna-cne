@@ -6,13 +6,8 @@ node_modules/
 .env.local
 .env.production
 
-# Upload directories (keep structure, ignore contents)
-uploads/payments/*
-!uploads/payments/.gitkeep
-uploads/qr-codes/*
-!uploads/qr-codes/.gitkeep
-uploads/bulk/*
-!uploads/bulk/.gitkeep
+# Upload directories - symlinked to persistent storage on server
+uploads/
 
 # Logs
 *.log
