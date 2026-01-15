@@ -410,7 +410,7 @@ router.get('/stats', isAuthenticated, async (req, res) => {
       const percentageFilled = total > 0 ? ((total / maxRegistrations) * 100).toFixed(2) : '0.00';
       
       // Get recent registrations for this workshop
-      let recent = Registration.find({ workshopId });
+      let recent = await Registration.find({ workshopId });
       recent.sort((a, b) => {
         const dateA = new Date(a.submittedAt || a.createdAt);
         const dateB = new Date(b.submittedAt || b.createdAt);
@@ -447,8 +447,8 @@ router.get('/stats', isAuthenticated, async (req, res) => {
       });
     } else {
       // Get aggregated stats for all workshops
-      const total = Registration.getRegistrationCount();
-      const allWorkshops = Workshop.find({});
+      const total = await Registration.getRegistrationCount();
+      const allWorkshops = await Workshop.find({});
       const totalMaxSeats = allWorkshops.reduce((sum, w) => sum + (w.maxSeats || 0), 0);
       const remaining = Math.max(0, totalMaxSeats - total);
       const percentageFilled = total > 0 && totalMaxSeats > 0 
@@ -456,7 +456,7 @@ router.get('/stats', isAuthenticated, async (req, res) => {
         : '0.00';
       
       // Get recent registrations across all workshops
-      let recent = Registration.find({});
+      let recent = await Registration.find({});
       recent.sort((a, b) => {
         const dateA = new Date(a.submittedAt || a.createdAt);
         const dateB = new Date(b.submittedAt || b.createdAt);
@@ -527,6 +527,13 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
       attendanceMap[key] = att;
     });
 
+    // Fetch all workshops and create a map for quick lookup
+    const allWorkshops = await Workshop.find({});
+    const workshopMap = {};
+    allWorkshops.forEach(w => {
+      workshopMap[w._id] = w;
+    });
+
     // Column mapping
     const columnMapping = {
       'sno': 'S.No',
@@ -554,7 +561,7 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
 
     // Prepare data for Excel
     const excelData = registrations.map((reg, index) => {
-      const workshop = Workshop.findById(reg.workshopId);
+      const workshop = workshopMap[reg.workshopId];
       const attendanceKey = `${reg.workshopId}_${reg.mncUID}`;
       const attendance = attendanceMap[attendanceKey];
       const attendanceStatus = attendance ? 'Present' : 'Applied';
