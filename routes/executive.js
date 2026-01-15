@@ -537,10 +537,11 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                     }
                 }
 
-                // Check for duplicate (using workshop from form)
+                // Check for duplicate by MNC UID (using workshop from form)
                 const existingRegistrations = await Registration.find();
                 const duplicate = existingRegistrations.find(reg => 
-                    reg.mobileNumber === String(row.mobileNumber) && 
+                    reg.mncUID && row.mncUID &&
+                    reg.mncUID.trim().toLowerCase() === String(row.mncUID).trim().toLowerCase() && 
                     reg.workshopId === workshopId
                 );
 
