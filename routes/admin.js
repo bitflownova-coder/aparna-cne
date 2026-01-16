@@ -145,7 +145,11 @@ router.get('/check-session', (req, res) => {
       isAdmin: req.session.isAdmin || false,
       isUser: !!req.session.userId,
       role: req.session.role,
-      fullName: req.session.fullName
+      fullName: req.session.fullName,
+      user: {
+        username: req.session.username,
+        role: req.session.role
+      }
     });
   } else {
     res.json({ success: false, isAdmin: false, isUser: false });

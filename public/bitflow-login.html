@@ -214,8 +214,11 @@
                 const response = await fetch('/api/admin/check-session');
                 const result = await response.json();
                 
-                if (result.success && result.user && result.user.username === 'bitflowadmin') {
-                    window.location.href = '/bitflow-portal.html';
+                if (result.success) {
+                    const username = result.user?.username || result.username;
+                    if (username === 'bitflowadmin') {
+                        window.location.href = '/bitflow-portal.html';
+                    }
                 }
             } catch (error) {
                 // Not logged in, stay on login page
