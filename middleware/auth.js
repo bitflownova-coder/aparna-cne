@@ -42,10 +42,10 @@ const verifyAdminCredentials = async (username, password) => {
   // First, check database users table for admin role
   if (DbUser) {
     try {
-      const result = await DbUser.findOne({ username, status: 'active' });
-      if (result.success && result.data && result.data.role === 'admin') {
+      const user = await DbUser.findOne({ username, status: 'active' });
+      if (user && user.role === 'admin') {
         // Direct password comparison (plain text in DB)
-        if (result.data.password === password) {
+        if (user.password === password) {
           return true;
         }
       }

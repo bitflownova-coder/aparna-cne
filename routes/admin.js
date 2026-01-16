@@ -1366,10 +1366,10 @@ router.post('/cleanup', isAdmin, async (req, res) => {
 // Bitflow Owner Portal - Get all audit logs with filters
 router.get('/audit-logs', isAuthenticated, async (req, res) => {
   try {
-    // Only allow bitflowadmin user or main admin
-    const username = req.session.username;
-    if (username !== 'bitflowadmin' && username !== 'aparnainstitutes') {
-      return res.status(403).json({ success: false, message: 'Access denied' });
+    // Only allow admin users
+    const isAdminUser = req.session.isAdmin === true || req.session.role === 'admin';
+    if (!isAdminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied - Admin only' });
     }
 
     const { action, entityType, userId, dateFrom, dateTo } = req.query;
@@ -1406,10 +1406,10 @@ router.get('/audit-logs', isAuthenticated, async (req, res) => {
 // Bitflow Owner Portal - Get audit log by ID
 router.get('/audit-logs/:id', isAuthenticated, async (req, res) => {
   try {
-    // Only allow bitflowadmin user or main admin
-    const username = req.session.username;
-    if (username !== 'bitflowadmin' && username !== 'aparnainstitutes') {
-      return res.status(403).json({ success: false, message: 'Access denied' });
+    // Only allow admin users
+    const isAdminUser = req.session.isAdmin === true || req.session.role === 'admin';
+    if (!isAdminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied - Admin only' });
     }
 
     const result = await AuditLog.getById(req.params.id);
