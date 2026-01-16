@@ -93,13 +93,10 @@ function requireAttendanceAuth(req, res, next) {
 // Mark attendance
 router.post('/mark', async (req, res) => {
     try {
-        const { workshopId, identifier, mncRegRoman, mncRegNumber, timestamp } = req.body;
+        const { workshopId, identifier, timestamp } = req.body;
         
-        // Build MNC Registration Number from parts if provided
-        let searchIdentifier = identifier;
-        if (mncRegRoman && mncRegNumber) {
-            searchIdentifier = `${mncRegRoman}-${mncRegNumber}`;
-        }
+        // Build MNC Registration Number from identifier
+        const searchIdentifier = identifier.trim().toUpperCase();
         
         // Create device fingerprint from multiple sources for better uniqueness
         const userAgent = req.headers['user-agent'] || '';
@@ -124,20 +121,17 @@ router.post('/mark', async (req, res) => {
             });
         }
         
-        // Verify student is registered - search by MNC registration number (exact match or partial)
+        // Verify student is registered - search by MNC registration number ONLY
         const allRegistrations = await db.Registration.find({});
         const registration = allRegistrations.find(reg => {
             if (reg.workshopId !== workshopId) return false;
             
-            // Match by MNC Registration Number (primary)
+            // Match by MNC Registration Number (exact match only)
             if (reg.mncRegistrationNumber) {
                 const regNum = reg.mncRegistrationNumber.toUpperCase().trim();
-                const searchNum = searchIdentifier.toUpperCase().trim();
+                const searchNum = searchIdentifier;
                 if (regNum === searchNum) return true;
             }
-            
-            // Fallback: match by mobile number
-            if (reg.mobileNumber === searchIdentifier) return true;
             
             return false;
         });

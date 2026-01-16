@@ -430,7 +430,13 @@ const Workshop = {
   
   getActiveWorkshops: async () => {
     const pool = await getPool();
-    const [rows] = await pool.query("SELECT * FROM workshops WHERE status = 'active' ORDER BY date ASC");
+    // Show workshops that are active/full AND within date range (today - 1 day to future)
+    const [rows] = await pool.query(
+      `SELECT * FROM workshops 
+       WHERE status IN ('active', 'full') 
+         AND DATE(date) >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+       ORDER BY date ASC`
+    );
     return rows;
   },
   
@@ -777,9 +783,9 @@ const Registration = {
       }
       
       // Insert or update the counter atomically with row lock
-      // Start from 50 so first registration gets 51
+      // Start from 0 so first registration gets 0001
       await connection.query(
-        `INSERT INTO form_number_counters (workshopId, lastNumber) VALUES (?, 50) 
+        `INSERT INTO form_number_counters (workshopId, lastNumber) VALUES (?, 0) 
          ON DUPLICATE KEY UPDATE lastNumber = lastNumber`,
         [workshopId]
       );

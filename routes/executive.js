@@ -537,13 +537,12 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                     }
                 }
 
-                // Check for duplicate by MNC UID (using workshop from form)
-                const existingRegistrations = await Registration.find();
-                const duplicate = existingRegistrations.find(reg => 
-                    reg.mncUID && row.mncUID &&
-                    reg.mncUID.trim().toLowerCase() === String(row.mncUID).trim().toLowerCase() && 
-                    reg.workshopId === workshopId
-                );
+                // Check for duplicate by MNC UID using database query (fast)
+                const existingRegistrations = await Registration.find({ 
+                    mncUID: String(row.mncUID).trim(),
+                    workshopId: workshopId 
+                });
+                const duplicate = existingRegistrations.length > 0 ? existingRegistrations[0] : null;
 
                 if (duplicate) {
                     // Check if data changed
@@ -585,13 +584,10 @@ router.post('/bulk-upload', isAgent, upload.single('file'), async (req, res) => 
                         });
                     }
                 } else {
-                    // Find existing student by MNC UID first, then by mobile
+                    // Find existing student by MNC UID ONLY (no mobile fallback)
                     let student = null;
                     if (row.mncUID) {
                         student = await Student.findByMncUID(String(row.mncUID).trim());
-                    }
-                    if (!student) {
-                        student = await Student.findByMobile(String(row.mobileNumber));
                     }
                     
                     if (!student) {
