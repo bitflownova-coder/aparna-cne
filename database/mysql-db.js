@@ -1075,6 +1075,117 @@ const AuditLog = {
       [entityType, entityId]
     );
     return rows;
+  },
+  
+  // Bitflow Owner Portal - Get all logs with advanced filters
+  getAll: async (filters = {}) => {
+    try {
+      const pool = await getPool();
+      let sql = 'SELECT * FROM audit_logs';
+      const conditions = [];
+      const values = [];
+      
+      // Add filters
+      if (filters.action) {
+        conditions.push('action = ?');
+        values.push(filters.action);
+      }
+      
+      if (filters.entityType) {
+        conditions.push('entityType = ?');
+        values.push(filters.entityType);
+      }
+      
+      if (filters.userId) {
+        conditions.push('userId = ?');
+        values.push(filters.userId);
+      }
+      
+      // Date range filter
+      if (filters.dateRange) {
+        if (filters.dateRange.from) {
+          conditions.push('createdAt >= ?');
+          values.push(filters.dateRange.from);
+        }
+        if (filters.dateRange.to) {
+          conditions.push('createdAt <= ?');
+          values.push(filters.dateRange.to);
+        }
+      }
+      
+      // Add WHERE clause if there are conditions
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+      }
+      
+      // Order by most recent first
+      sql += ' ORDER BY createdAt DESC LIMIT 5000';
+      
+      const [rows] = await pool.query(sql, values);
+      
+      // Parse JSON details field
+      const logsWithParsedDetails = rows.map(row => {
+        try {
+          return {
+            ...row,
+            details: row.details ? JSON.parse(row.details) : null
+          };
+        } catch (e) {
+          return row;
+        }
+      });
+      
+      return {
+        success: true,
+        data: logsWithParsedDetails
+      };
+    } catch (error) {
+      console.error('Error in AuditLog.getAll:', error);
+      return {
+        success: false,
+        message: 'Error fetching audit logs',
+        error: error.message
+      };
+    }
+  },
+  
+  // Bitflow Owner Portal - Get log by ID
+  getById: async (logId) => {
+    try {
+      const pool = await getPool();
+      const [rows] = await pool.query(
+        'SELECT * FROM audit_logs WHERE _id = ?',
+        [logId]
+      );
+      
+      if (rows.length === 0) {
+        return {
+          success: false,
+          message: 'Audit log not found'
+        };
+      }
+      
+      const log = rows[0];
+      
+      // Parse JSON details
+      try {
+        log.details = log.details ? JSON.parse(log.details) : null;
+      } catch (e) {
+        // Keep original if parsing fails
+      }
+      
+      return {
+        success: true,
+        data: log
+      };
+    } catch (error) {
+      console.error('Error in AuditLog.getById:', error);
+      return {
+        success: false,
+        message: 'Error fetching audit log',
+        error: error.message
+      };
+    }
   }
 };
 

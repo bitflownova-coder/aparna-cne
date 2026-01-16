@@ -18,7 +18,11 @@ if (useMySQL) {
   Student = localDb.Student;
   Agent = localDb.Agent;
   Attendance = localDb.Attendance;
-  AuditLog = { create: async () => {} }; // Stub for local dev
+  AuditLog = { 
+    create: async () => {},
+    getAll: async () => ({ success: true, data: [] }),
+    getById: async () => ({ success: false })
+  }; // Stub for local dev
 }
 
 // Constants
@@ -1377,6 +1381,66 @@ router.get('/audit-logs', isAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error fetching audit logs:', error);
     res.status(500).json({ success: false, message: 'Error fetching audit logs' });
+  }
+});
+
+// Bitflow Owner Portal - Get all audit logs with filters
+router.get('/audit-logs', isAuthenticated, async (req, res) => {
+  try {
+    // Only allow bitflowadmin user
+    if (req.session.user.username !== 'bitflowadmin') {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const { action, entityType, userId, dateFrom, dateTo } = req.query;
+    
+    const filters = {};
+    if (action) filters.action = action;
+    if (entityType) filters.entityType = entityType;
+    if (userId) filters.userId = userId;
+    
+    // Date range filter
+    if (dateFrom || dateTo) {
+      filters.dateRange = {};
+      if (dateFrom) filters.dateRange.from = new Date(dateFrom);
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        filters.dateRange.to = toDate;
+      }
+    }
+
+    const result = await AuditLog.getAll(filters);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching audit logs', error: error.message });
+  }
+});
+
+// Bitflow Owner Portal - Get audit log by ID
+router.get('/audit-logs/:id', isAuthenticated, async (req, res) => {
+  try {
+    // Only allow bitflowadmin user
+    if (req.session.user.username !== 'bitflowadmin') {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const result = await AuditLog.getById(req.params.id);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(404).json(result);
+    }
+  } catch (error) {
+    console.error('Error fetching audit log:', error);
+    res.status(500).json({ success: false, message: 'Error fetching audit log', error: error.message });
   }
 });
 
