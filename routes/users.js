@@ -1,11 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { isAdmin } = require('../middleware/auth');
+const { isAdmin, isAuthenticated } = require('../middleware/auth');
 
 // Get all users (admin only)
-router.get('/', isAdmin, async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
   try {
+    // Check if user is admin
+    if (!req.session.isAdmin && req.session.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+    
     const users = await User.find({});
     res.json({
       success: true,
