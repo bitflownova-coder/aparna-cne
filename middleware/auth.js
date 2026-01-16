@@ -1,13 +1,16 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 
-// Conditional database import for Agent
+// Conditional database import for Agent and database User
 const useMySQL = process.env.USE_MYSQL === 'true';
-let Agent;
+let Agent, DbUser;
 if (useMySQL) {
-  Agent = require('../database/mysql-db').Agent;
+  const mysqlDb = require('../database/mysql-db');
+  Agent = mysqlDb.Agent;
+  DbUser = mysqlDb.User;
 } else {
   Agent = require('../localdb').Agent;
+  DbUser = null;
 }
 
 // Middleware to check if user is authenticated as admin or user
@@ -36,16 +39,30 @@ const isAgent = (req, res, next) => {
 
 // Verify admin credentials
 const verifyAdminCredentials = async (username, password) => {
+  // First, check database users table for admin role
+  if (DbUser) {
+    try {
+      const result = await DbUser.findOne({ username, status: 'active' });
+      if (result.success && result.data && result.data.role === 'admin') {
+        // Direct password comparison (plain text in DB)
+        if (result.data.password === password) {
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Database admin check error:', error);
+    }
+  }
+  
+  // Fallback to hardcoded admin
   const adminUsername = process.env.ADMIN_USERNAME || 'aparnainstitutes';
   const adminPassword = process.env.ADMIN_PASSWORD || 'APARNA@2025!Admin';
   
-  // Simple comparison for username
-  if (username !== adminUsername) {
-    return false;
+  if (username === adminUsername && password === adminPassword) {
+    return true;
   }
   
-  // Direct password comparison (in production, you'd store hashed password)
-  return password === adminPassword;
+  return false;
 };
 
 // Verify user credentials
