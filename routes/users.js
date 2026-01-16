@@ -6,8 +6,11 @@ const { isAdmin, isAuthenticated } = require('../middleware/auth');
 // Get all users (admin only)
 router.get('/', isAuthenticated, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.session.isAdmin && req.session.role !== 'admin') {
+    // Check if user is admin (either isAdmin flag OR role is 'admin')
+    const isAdminUser = req.session.isAdmin === true || req.session.role === 'admin';
+    
+    if (!isAdminUser) {
+      console.log('Access denied - session:', { isAdmin: req.session.isAdmin, role: req.session.role, username: req.session.username });
       return res.status(403).json({
         success: false,
         message: 'Admin access required'
