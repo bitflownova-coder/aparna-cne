@@ -125,8 +125,23 @@ async function handleLookup(e) {
 }
 
 // Show all registrations (newest first)
-function showAllRegistrations(registrations) {
+async function showAllRegistrations(registrations) {
     const detailsDiv = document.getElementById('registrationDetails');
+    
+    // Fetch attendance data
+    let attendanceMap = {};
+    try {
+        const attResponse = await fetch('/api/attendance/all');
+        const attData = await attResponse.json();
+        if (attData.success) {
+            attData.data.forEach(att => {
+                const key = `${att.workshopId}_${att.mncUID}`;
+                attendanceMap[key] = att;
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching attendance:', error);
+    }
     
     let html = '';
     
@@ -136,84 +151,167 @@ function showAllRegistrations(registrations) {
         </div>`;
     }
     
+    // Table-based layout matching admin portal
+    html += `
+        <style>
+            .reg-table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .reg-table thead {
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+            }
+            .reg-table th {
+                padding: 15px;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.95rem;
+            }
+            .reg-table td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #f3f4f6;
+                font-size: 0.9rem;
+            }
+            .reg-table tbody tr:hover {
+                background: #f9fafb;
+            }
+            .badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .badge-present {
+                background: #d1fae5;
+                color: #065f46;
+            }
+            .badge-applied {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+            .badge-latest {
+                background: #10b981;
+                color: white;
+                padding: 6px 12px;
+            }
+            .action-btn {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.85rem;
+                margin-right: 8px;
+                transition: all 0.3s;
+            }
+            .btn-download {
+                background: #10b981;
+                color: white;
+            }
+            .btn-download:hover {
+                background: #059669;
+                transform: translateY(-2px);
+            }
+            .btn-download:disabled {
+                background: #d1d5db;
+                cursor: not-allowed;
+                transform: none;
+            }
+            .btn-delete {
+                background: #ef4444;
+                color: white;
+            }
+            .btn-delete:hover {
+                background: #dc2626;
+                transform: translateY(-2px);
+            }
+            @media (max-width: 768px) {
+                .reg-table {
+                    font-size: 0.8rem;
+                }
+                .reg-table th,
+                .reg-table td {
+                    padding: 8px;
+                }
+            }
+        </style>
+        <table class="reg-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Form No</th>
+                    <th>Workshop</th>
+                    <th>MNC UID</th>
+                    <th>MNC Reg No</th>
+                    <th>Attendance</th>
+                    <th>Submitted</th>
+                    <th>Downloads</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
     registrations.forEach((data, index) => {
         const submittedDate = new Date(data.submittedAt).toLocaleString('en-IN', {
-            dateStyle: 'long',
+            dateStyle: 'medium',
             timeStyle: 'short'
         });
         
         const remainingDownloads = 2 - data.downloadCount;
         const isNewest = index === 0;
         
+        // Check attendance status
+        const attKey = `${data.workshop?._id || data.workshopId}_${data.mncUID}`;
+        const attendance = attendanceMap[attKey];
+        const attendanceStatus = attendance ? 'Present' : 'Applied';
+        const attendanceBadge = attendance 
+            ? '<span class="badge badge-present">✓ Present</span>'
+            : '<span class="badge badge-applied">● Applied</span>';
+        
         html += `
-            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); ${isNewest ? 'border: 3px solid #10b981;' : ''}">
-                ${isNewest ? '<div style="background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 12px; font-weight: 600;">📌 Latest Registration</div>' : ''}
-                ${data.workshop ? `<h3 style="color: #667eea; margin-bottom: 16px;">🎓 ${data.workshop.title}</h3>` : ''}
-                
-                <div class="review-details">
-                    <div class="review-item">
-                        <strong>Form Number</strong>
-                        <span>${data.formNumber || 'N/A'}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Full Name</strong>
-                        <span>${data.fullName}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>MNC UID</strong>
-                        <span>${data.mncUID}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>MNC Registration Number</strong>
-                        <span>${data.mncRegistrationNumber}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Mobile Number</strong>
-                        <span>${data.mobileNumber}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Payment UTR / Transaction ID</strong>
-                        <span>${data.paymentUTR}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Submitted At</strong>
-                        <span>${submittedDate}</span>
-                    </div>
-                    ${data.workshop ? `
-                    <div class="review-item">
-                        <strong>Workshop Date</strong>
-                        <span>${new Date(data.workshop.date).toLocaleDateString('en-IN', { dateStyle: 'long' })}</span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Venue</strong>
-                        <span>${data.workshop.venue}</span>
-                    </div>` : ''}
-                    <div class="review-item">
-                        <strong>Payment Screenshot</strong>
-                        <span><img src="/uploads/payments/${data.paymentScreenshot}" style="max-width: 300px; border-radius: 8px; margin-top: 10px;" alt="Payment Screenshot"></span>
-                    </div>
-                    <div class="review-item">
-                        <strong>Download Status</strong>
-                        <span style="color: ${remainingDownloads > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
-                            ${remainingDownloads > 0 ? `📥 ${remainingDownloads}/2 downloads remaining` : '❌ Limit reached (2/2)'}
-                        </span>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px; margin-top: 16px;">
-                    <button class="btn btn-primary" ${remainingDownloads <= 0 ? 'disabled' : ''} 
-                        onclick="downloadRegistration(${index})" 
-                        style="flex: 1; ${remainingDownloads <= 0 ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
-                        ${remainingDownloads > 0 ? '📄 Download PDF' : '❌ Download Limit Reached'}
+            <tr>
+                <td>${isNewest ? '<span class="badge badge-latest">📌 Latest</span>' : ''}</td>
+                <td><strong>${data.formNumber || 'N/A'}</strong></td>
+                <td>${data.workshop ? data.workshop.title : 'N/A'}</td>
+                <td><code>${data.mncUID}</code></td>
+                <td>${data.mncRegistrationNumber}</td>
+                <td>${attendanceBadge}</td>
+                <td>${submittedDate}</td>
+                <td style="color: ${remainingDownloads > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
+                    ${remainingDownloads}/2 left
+                </td>
+                <td style="white-space: nowrap;">
+                    <button class="action-btn btn-download" ${remainingDownloads <= 0 ? 'disabled' : ''} 
+                        onclick="downloadRegistration(${index})">
+                        ${remainingDownloads > 0 ? '📄 Download' : '❌ Limit'}
                     </button>
-                    <button class="btn" onclick="deleteRegistration('${data._id}')" 
-                        style="background: #ef4444; color: white; padding: 10px 16px;">
-                        🗑️ Delete
+                    <button class="action-btn btn-delete" onclick="deleteRegistration('${data._id}')">
+                        🗑️
                     </button>
-                </div>
-            </div>
+                </td>
+            </tr>
         `;
     });
+    
+    html += `
+            </tbody>
+        </table>
+        <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px;">
+            <strong style="color: #92400e;">💡 Tip:</strong>
+            <ul style="margin: 10px 0 0 20px; color: #78350f;">
+                <li>Each registration can be downloaded <strong>maximum 2 times</strong></li>
+                <li>Print the downloaded form and bring it to the workshop</li>
+                <li>Attendance will be marked when you scan QR code at the workshop venue</li>
+            </ul>
+        </div>
+    `;
     
     detailsDiv.innerHTML = html;
     

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Attendance Marking - Admin</title>
+    <link rel="icon" href="/assest/logo.png" type="image/png">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .mark-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .panel h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-mark {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-mark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-mark:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .participants-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: var(--primary);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-present {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-absent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-mark-single {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-mark-single:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-unmark {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-unmark:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        @media (max-width: 968px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo-section">
+                <div class="logo-icon">🎓</div>
+                <div class="brand-name">
+                    <span class="brand-title">APARNA INSTITUTES</span>
+                    <span class="brand-subtitle">Manual Attendance Marking</span>
+                </div>
+            </div>
+            <nav class="header-nav">
+                <a href="/admin-attendance" class="nav-btn">📋 View Attendance</a>
+                <a href="/admin-dashboard" class="nav-btn">📊 Dashboard</a>
+                <a href="/admin-login" class="nav-btn">🔒 Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="mark-container">
+        <!-- Alert Messages -->
+        <div id="alertMessage" class="alert"></div>
+        
+        <div class="header-section">
+            <h1 style="color: var(--primary); margin-bottom: 10px;">✅ Manual Attendance Marking</h1>
+            <p style="color: var(--text-light);">Mark attendance for participants who couldn't scan QR codes</p>
+        </div>
+
+        <div class="two-column-layout">
+            <!-- Quick Mark Panel -->
+            <div class="panel">
+                <h3>⚡ Quick Mark by MNC Registration Number</h3>
+                <div class="form-group">
+                    <label>Select Workshop:</label>
+                    <select id="quickWorkshop">
+                        <option value="">-- Select Workshop --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>MNC Registration Number:</label>
+                    <input type="text" id="quickRegNumber" placeholder="e.g., XII-12345" style="text-transform: uppercase;">
+                </div>
+                <button class="btn-mark" onclick="quickMarkAttendance()">
+                    ✅ Mark Attendance
+                </button>
+            </div>
+            
+            <!-- Bulk Selection Panel -->
+            <div class="panel">
+                <h3>📦 View Workshop Participants</h3>
+                <div class="form-group">
+                    <label>Select Workshop to View Participants:</label>
+                    <select id="workshopFilter" onchange="loadParticipants()">
+                        <option value="">-- Select Workshop --</option>
+                    </select>
+                </div>
+                <div class="stats-row" id="workshopStats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalRegistered">0</div>
+                        <div class="stat-label">Registered</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalPresent">0</div>
+                        <div class="stat-label">Present</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalAbsent">0</div>
+                        <div class="stat-label">Absent</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participants Table -->
+        <div class="participants-table">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by name, MNC UID, or registration number..." style="display: none;">
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Form No</th>
+                        <th>MNC UID</th>
+                        <th>MNC Reg No</th>
+                        <th>Full Name</th>
+                        <th>Mobile</th>
+                        <th>Attendance Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="participantsTableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">👥</div>
+                                <h3>Select a workshop to view participants</h3>
+                                <p>Choose a workshop from the dropdown above</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allWorkshops = [];
+        let allRegistrations = [];
+        let allAttendance = [];
+        let selectedWorkshopId = '';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadData();
+        });
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/admin/check-session');
+                const data = await response.json();
+                
+                if (!data.success || !data.isAdmin) {
+                    window.location.href = '/admin-login';
+                    return;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                window.location.href = '/admin-login';
+            }
+        }
+        
+        async function loadData() {
+            try {
+                // Load workshops
+                const wsResponse = await fetch('/api/workshop');
+                const wsResult = await wsResponse.json();
+                
+                if (wsResult.success) {
+                    allWorkshops = wsResult.data || [];
+                    populateWorkshopDropdowns();
+                }
+                
+                // Load all registrations
+                const regResponse = await fetch('/api/admin/registrations?limit=500');
+                const regResult = await regResponse.json();
+                
+                if (regResult.success) {
+                    allRegistrations = regResult.data || [];
+                }
+                
+                // Load all attendance
+                const attResponse = await fetch('/api/attendance/all');
+                const attResult = await attResponse.json();
+                
+                if (attResult.success) {
+                    allAttendance = attResult.data || [];
+                }
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showAlert('Error loading data', 'error');
+            }
+        }
+        
+        function populateWorkshopDropdowns() {
+            const quickSelect = document.getElementById('quickWorkshop');
+            const filterSelect = document.getElementById('workshopFilter');
+            
+            // Sort by date
+            const sortedWorkshops = allWorkshops.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            sortedWorkshops.forEach(ws => {
+                const date = new Date(ws.date).toLocaleDateString('en-IN', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                const option1 = document.createElement('option');
+                option1.value = ws._id;
+                option1.textContent = `${ws.title} - ${date}`;
+                quickSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = ws._id;
+                option2.textContent = `${ws.title} - ${date}`;
+                filterSelect.appendChild(option2);
+            });
+        }
+        
+        async function quickMarkAttendance() {
+            const workshopId = document.getElementById('quickWorkshop').value;
+            const regNumber = document.getElementById('quickRegNumber').value.trim().toUpperCase();
+            
+            if (!workshopId) {
+                showAlert('Please select a workshop', 'error');
+                return;
+            }
+            
+            if (!regNumber) {
+                showAlert('Please enter MNC Registration Number', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/attendance/mark-manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        workshopId,
+                        mncRegistrationNumber: regNumber
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ Attendance marked successfully for ${result.data.studentName}`, 'success');
+                    document.getElementById('quickRegNumber').value = '';
+                    
+                    // Reload data
+                    await loadData();
+                    
+                    // Refresh table if same workshop is selected
+                    if (selectedWorkshopId === workshopId) {
+                        loadParticipants();
+                    }
+                } else {
+                    showAlert(result.message || 'Failed to mark attendance', 'error');
+                }
+            } catch (error) {
+                console.error('Error marking attendance:', error);
+                showAlert('Failed to mark attendance', 'error');
+            }
+        }
+        
+        async function loadParticipants() {
+            const workshopId = document.getElementById('workshopFilter').value;
+            selectedWorkshopId = workshopId;
+            
+            const tbody = document.getElementById('participantsTableBody');
+            const searchBox = document.getElementById('searchBox');
+            const statsDiv = document.getElementById('workshopStats');
+            
+            if (!workshopId) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">👥</div>
+                                <h3>Select a workshop to view participants</h3>
+                                <p>Choose a workshop from the dropdown above</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                searchBox.style.display = 'none';
+                statsDiv.style.display = 'none';
+                return;
+            }
+            
+            searchBox.style.display = 'block';
+            statsDiv.style.display = 'flex';
+            
+            // Filter registrations for this workshop
+            const participants = allRegistrations.filter(reg => reg.workshopId === workshopId);
+            
+            if (participants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <h3>No participants found</h3>
+                                <p>No registrations for this workshop yet</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Create attendance map
+            const attendanceMap = {};
+            allAttendance.forEach(att => {
+                if (att.workshopId === workshopId) {
+                    attendanceMap[att.mncUID] = att;
+                }
+            });
+            
+            // Calculate stats
+            const totalPresent = Object.keys(attendanceMap).length;
+            const totalAbsent = participants.length - totalPresent;
+            
+            document.getElementById('totalRegistered').textContent = participants.length;
+            document.getElementById('totalPresent').textContent = totalPresent;
+            document.getElementById('totalAbsent').textContent = totalAbsent;
+            
+            // Display participants
+            displayParticipants(participants, attendanceMap);
+        }
+        
+        function displayParticipants(participants, attendanceMap) {
+            const tbody = document.getElementById('participantsTableBody');
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            // Filter by search
+            let filtered = participants;
+            if (searchTerm) {
+                filtered = participants.filter(p => 
+                    p.fullName.toLowerCase().includes(searchTerm) ||
+                    p.mncUID.toLowerCase().includes(searchTerm) ||
+                    (p.mncRegistrationNumber && p.mncRegistrationNumber.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">🔍</div>
+                                <h3>No matches found</h3>
+                                <p>Try a different search term</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(p => {
+                const attendance = attendanceMap[p.mncUID];
+                const isPresent = !!attendance;
+                
+                return `
+                    <tr>
+                        <td><strong>${p.formNumber || '-'}</strong></td>
+                        <td><code>${p.mncUID}</code></td>
+                        <td>${p.mncRegistrationNumber || '-'}</td>
+                        <td>${escapeHtml(p.fullName)}</td>
+                        <td>${p.mobileNumber}</td>
+                        <td>
+                            ${isPresent 
+                                ? '<span class="badge badge-present">✓ Present</span>' 
+                                : '<span class="badge badge-absent">● Absent</span>'}
+                        </td>
+                        <td>
+                            ${isPresent 
+                                ? `<button class="action-btn btn-unmark" onclick="unmarkAttendance('${attendance._id}')">❌ Unmark</button>`
+                                : `<button class="action-btn btn-mark-single" onclick="markAttendance('${p.mncRegistrationNumber}')">✅ Mark</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function markAttendance(regNumber) {
+            const workshopId = selectedWorkshopId;
+            
+            if (!confirm(`Mark attendance for ${regNumber}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/attendance/mark-manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        workshopId,
+                        mncRegistrationNumber: regNumber
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ Attendance marked for ${result.data.studentName}`, 'success');
+                    await loadData();
+                    loadParticipants();
+                } else {
+                    showAlert(result.message || 'Failed to mark attendance', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to mark attendance', 'error');
+            }
+        }
+        
+        async function unmarkAttendance(attendanceId) {
+            if (!confirm('Remove this attendance record?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/attendance/${attendanceId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('✅ Attendance removed', 'success');
+                    await loadData();
+                    loadParticipants();
+                } else {
+                    showAlert(result.message || 'Failed to remove attendance', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to remove attendance', 'error');
+            }
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('alertMessage');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Search functionality
+        document.getElementById('searchBox').addEventListener('input', () => {
+            const workshopId = document.getElementById('workshopFilter').value;
+            if (workshopId) {
+                loadParticipants();
+            }
+        });
+    </script>
+</body>
+</html>

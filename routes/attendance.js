@@ -270,4 +270,122 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// Manual attendance marking by admin (no device restriction)
+router.post('/mark-manual', async (req, res) => {
+    try {
+        const { workshopId, mncRegistrationNumber } = req.body;
+        
+        console.log('Manual attendance marking:', { workshopId, mncRegistrationNumber });
+        
+        if (!workshopId || !mncRegistrationNumber) {
+            return res.json({
+                success: false,
+                message: 'Workshop ID and MNC Registration Number are required'
+            });
+        }
+        
+        // Verify workshop exists
+        const workshop = await db.Workshop.findById(workshopId);
+        if (!workshop) {
+            return res.json({
+                success: false,
+                message: 'Workshop not found'
+            });
+        }
+        
+        // Find registration by MNC Registration Number
+        const allRegistrations = await db.Registration.find({});
+        const registration = allRegistrations.find(reg => {
+            if (reg.workshopId !== workshopId) return false;
+            
+            if (reg.mncRegistrationNumber) {
+                const regNum = reg.mncRegistrationNumber.toUpperCase().trim();
+                const searchNum = mncRegistrationNumber.toUpperCase().trim();
+                if (regNum === searchNum) return true;
+            }
+            
+            return false;
+        });
+        
+        if (!registration) {
+            return res.json({
+                success: false,
+                message: `No registration found for ${mncRegistrationNumber} in this workshop`
+            });
+        }
+        
+        // Check if attendance already marked
+        const allAttendance = await db.Attendance.find({});
+        const existingAttendance = allAttendance.find(att => 
+            att.workshopId === workshopId && att.mncUID === registration.mncUID
+        );
+        
+        if (existingAttendance) {
+            return res.json({
+                success: false,
+                message: 'Attendance already marked for this student in this workshop'
+            });
+        }
+        
+        // Create attendance record (manual marking - no device fingerprint restrictions)
+        const attendance = await db.Attendance.create({
+            workshopId,
+            mncUID: registration.mncUID,
+            studentName: registration.fullName,
+            registrationNumber: registration.mncRegistrationNumber,
+            markedAt: new Date(),
+            ipAddress: 'MANUAL_ADMIN',
+            deviceFingerprint: `ADMIN_${req.session?.username || 'UNKNOWN'}_${Date.now()}`,
+            userAgent: 'Manual Admin Entry',
+            markedBy: req.session?.username || 'admin'
+        });
+        
+        console.log('Manual attendance marked successfully:', attendance._id);
+        
+        res.json({
+            success: true,
+            message: 'Attendance marked successfully',
+            data: attendance
+        });
+        
+    } catch (error) {
+        console.error('Manual mark attendance error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to mark attendance'
+        });
+    }
+});
+
+// Delete attendance record (admin only)
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const attendance = await db.Attendance.findById(id);
+        if (!attendance) {
+            return res.json({
+                success: false,
+                message: 'Attendance record not found'
+            });
+        }
+        
+        await db.Attendance.deleteById(id);
+        
+        console.log('Attendance deleted:', id);
+        
+        res.json({
+            success: true,
+            message: 'Attendance record deleted successfully'
+        });
+        
+    } catch (error) {
+        console.error('Delete attendance error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete attendance record'
+        });
+    }
+});
+
 module.exports = router;
