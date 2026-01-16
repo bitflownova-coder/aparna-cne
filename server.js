@@ -167,6 +167,7 @@ app.get('/attendance-portal', (req, res) => {
     sendPage('attendance-portal.html', res);
 });
 app.get('/admin-attendance', (req, res) => sendPage('admin-attendance.html', res));
+app.get('/admin-mark-attendance', (req, res) => sendPage('admin-mark-attendance.html', res));
 
 // Agent Portal Routes (Legacy support)
 app.get('/agent-login', (req, res) => sendPage('agent-login.html', res));
