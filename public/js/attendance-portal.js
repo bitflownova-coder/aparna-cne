@@ -57,7 +57,7 @@ async function loadWorkshops() {
         
         if (result.success && result.data) {
             const select = document.getElementById('workshopSelect');
-            const workshops = result.data.filter(w => w.status === 'active');
+            const workshops = result.data.filter(w => ['active', 'full'].includes(w.status));
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');
