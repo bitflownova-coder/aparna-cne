@@ -536,7 +536,7 @@
                 return;
             }
             
-            // Create attendance map
+            // Create attendance map for THIS workshop only
             const attendanceMap = {};
             allAttendance.forEach(att => {
                 if (att.workshopId === workshopId) {
@@ -544,9 +544,25 @@
                 }
             });
             
-            // Calculate stats
-            const totalPresent = Object.keys(attendanceMap).length;
+            // Calculate stats - only count participants who are registered AND present
+            let totalPresent = 0;
+            participants.forEach(p => {
+                if (attendanceMap[p.mncUID]) {
+                    totalPresent++;
+                }
+            });
             const totalAbsent = participants.length - totalPresent;
+            
+            // Debug log
+            console.log('Workshop Stats:', {
+                workshopId,
+                totalRegistered: participants.length,
+                totalPresent,
+                totalAbsent,
+                attendanceRecords: Object.keys(attendanceMap).length,
+                participantUIDs: participants.map(p => p.mncUID),
+                attendanceUIDs: Object.keys(attendanceMap)
+            });
             
             document.getElementById('totalRegistered').textContent = participants.length;
             document.getElementById('totalPresent').textContent = totalPresent;
