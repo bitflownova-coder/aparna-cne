@@ -156,20 +156,8 @@ router.post('/mark', async (req, res) => {
             });
         }
         
-        // STRICT CHECK: Block if this device/phone has already marked attendance for ANY student in this workshop
-        const deviceAlreadyUsed = allAttendance.some(att => 
-            att.workshopId === workshopId && 
-            att.deviceFingerprint && 
-            att.deviceFingerprint === deviceFingerprint
-        );
-        
-        if (deviceAlreadyUsed) {
-            console.log('Device already used for this workshop:', deviceFingerprint);
-            return res.json({
-                success: false,
-                message: 'This device has already been used to mark attendance in this workshop. Each device can only mark ONE attendance.'
-            });
-        }
+        // NOTE: Device/IP check removed to allow multiple attendance from same device/IP
+        // This allows multiple students to mark attendance from the same phone/device
         
         // Create attendance record with device fingerprint
         const attendance = await db.Attendance.create({
