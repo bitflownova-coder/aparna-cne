@@ -667,7 +667,7 @@
                                     <input type="text" id="lookupInput" class="modern-input" placeholder="e.g. MNC2024001" style="flex: 1;">
                                     <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-light);">OR</span>
                                     <div style="display: flex; gap: 8px; align-items: center; flex: 1;">
-                                        <select id="lookupRegRoman" class="modern-input" style="flex: 0 0 100px; padding: 8px 12px;">
+                                        <select id="lookupRegRoman" class="modern-input" style="flex: 0 0 100px; padding: 8px 12px;" translate="no" lang="en">
                                             <option value="">Select</option>
                                             <option value="I">I</option>
                                             <option value="II">II</option>
@@ -735,7 +735,7 @@
                             <div class="modern-input-group">
                                 <label for="mncRegistrationNumber" class="modern-label">MNC Registration Number <span style="color:var(--danger)">*</span></label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select id="mncRegRoman" name="mncRegRoman" class="modern-input" style="flex: 0 0 120px;" required>
+                                    <select id="mncRegRoman" name="mncRegRoman" class="modern-input" style="flex: 0 0 120px;" translate="no" lang="en" required>
                                         <option value="">Select</option>
                                         <option value="I">I</option>
                                         <option value="II">II</option>
@@ -996,6 +996,7 @@
                             style="flex: 0 0 120px; padding: 14px 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; cursor: pointer; transition: border-color 0.3s;"
                             onfocus="this.style.borderColor='#667eea'"
                             onblur="this.style.borderColor='#e5e7eb'"
+                            translate="no" lang="en"
                             required>
                             <option value="">Part</option>
                             <option value="I">I</option>
