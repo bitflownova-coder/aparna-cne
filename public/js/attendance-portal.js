@@ -1,7 +1,7 @@
 let currentWorkshop = null;
 let qrRefreshInterval = null;
 let timerInterval = null;
-let currentTime = 30;
+let currentTime = 10;
 let qrUpdateCount = 0;
 
 // Load workshops on page load
@@ -107,7 +107,7 @@ function startDisplay() {
     generateQRCode();
     
     // Start auto-refresh
-    qrRefreshInterval = setInterval(generateQRCode, 30000); // 30 seconds
+    qrRefreshInterval = setInterval(generateQRCode, 10000); // 10 seconds
     startTimer();
     
     showNotification('QR Display Started', 'success');
@@ -193,7 +193,7 @@ function generateQRCode() {
     }
     
     // Reset timer
-    currentTime = 30;
+    currentTime = 10;
     updateTimer();
 }
 
@@ -207,14 +207,14 @@ function startTimer() {
         updateTimer();
         
         if (currentTime <= 0) {
-            currentTime = 30;
+            currentTime = 10;
         }
     }, 1000);
 }
 
 function updateTimer() {
     document.getElementById('timerText').textContent = currentTime;
-    const percentage = (currentTime / 30) * 100;
+    const percentage = (currentTime / 10) * 100;
     document.getElementById('timerBarFill').style.width = percentage + '%';
 }
 
