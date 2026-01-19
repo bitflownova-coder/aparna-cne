@@ -550,11 +550,26 @@ const Student = {
   findByMncRegistrationNumber: async (mncRegNo) => {
     const pool = await getPool();
     // Remove spaces and do case-insensitive search
-    const cleanRegNo = mncRegNo.replace(/\s+/g, '').trim();
-    const [rows] = await pool.query(
+    const cleanRegNo = mncRegNo.replace(/\s+/g, '').trim().toUpperCase();
+    
+    // Try exact match first
+    let [rows] = await pool.query(
       'SELECT * FROM students WHERE REPLACE(UPPER(mncRegistrationNumber), " ", "") = ? LIMIT 1',
-      [cleanRegNo.toUpperCase()]
+      [cleanRegNo]
     );
+    
+    // If not found, try partial match (for corrupted data with multiple reg numbers)
+    if (!rows || rows.length === 0) {
+      [rows] = await pool.query(
+        'SELECT * FROM students WHERE REPLACE(UPPER(mncRegistrationNumber), " ", "") LIKE ? LIMIT 1',
+        [`%${cleanRegNo}%`]
+      );
+      
+      if (rows && rows.length > 0) {
+        console.log(`WARNING: Found student using partial match. RegNo "${rows[0].mncRegistrationNumber}" contains multiple registration numbers!`);
+      }
+    }
+    
     return rows[0] || null;
   },
   
