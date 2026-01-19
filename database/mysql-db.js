@@ -538,11 +538,24 @@ const Student = {
   },
   
   findByMncUID: async (mncUID) => {
-    return Student.findOne({ mncUID: mncUID });
+    const pool = await getPool();
+    const cleanUID = mncUID.replace(/\s+/g, '').trim();
+    const [rows] = await pool.query(
+      'SELECT * FROM students WHERE REPLACE(UPPER(mncUID), " ", "") = ? LIMIT 1',
+      [cleanUID.toUpperCase()]
+    );
+    return rows[0] || null;
   },
   
   findByMncRegistrationNumber: async (mncRegNo) => {
-    return Student.findOne({ mncRegistrationNumber: mncRegNo });
+    const pool = await getPool();
+    // Remove spaces and do case-insensitive search
+    const cleanRegNo = mncRegNo.replace(/\s+/g, '').trim();
+    const [rows] = await pool.query(
+      'SELECT * FROM students WHERE REPLACE(UPPER(mncRegistrationNumber), " ", "") = ? LIMIT 1',
+      [cleanRegNo.toUpperCase()]
+    );
+    return rows[0] || null;
   },
   
   findByEmail: async (email) => {

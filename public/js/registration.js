@@ -87,7 +87,9 @@ async function performLookup() {
         return;
     }
     
-    const lookupValue = `${roman}-${number}`;
+    // Remove any spaces from the lookup value
+    const lookupValue = `${roman}-${number}`.replace(/\s+/g, '');
+    console.log('Looking up:', lookupValue);
 
     const originalText = btn.textContent;
     btn.disabled = true;
