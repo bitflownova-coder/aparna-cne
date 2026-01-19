@@ -484,7 +484,7 @@
             </div>
             <div class="header-buttons">
                 <button class="btn-secondary" id="selectColumnsBtn" style="margin-right: 8px;">⚙️ Select Columns</button>
-                <button class="btn-secondary" id="downloadExcelBtn" style="margin-right: 8px;">📊 Download Excel</button>
+                <button class="btn-secondary" id="downloadExcelBtn" style="margin-right: 8px;">📊 Download Registrations</button>
                 <button class="btn-primary" onclick="showCreateModal()">✨ Create Workshop</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-mark-attendance'">✅ Mark Attendance</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-dashboard'">← Dashboard</button>
@@ -527,6 +527,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 50px; text-align: center;">Select</th>
                         <th>Title</th>
                         <th>Date</th>
                         <th>Status</th>
@@ -538,7 +539,7 @@
                 </thead>
                 <tbody id="workshopsTableBody">
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px;">
+                        <td colspan="8" style="text-align: center; padding: 40px;">
                             <div class="loading">Loading workshops...</div>
                         </td>
                     </tr>

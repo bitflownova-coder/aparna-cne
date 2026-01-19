@@ -2,23 +2,30 @@
 let currentWorkshops = [];
 let editingWorkshopId = null;
 let selectedColumns = [];
+let selectedWorkshopId = null;
 
 // Available columns for export
 const availableColumns = [
-    { id: 'title', label: 'Workshop Title' },
-    { id: 'date', label: 'Workshop Date' },
-    { id: 'dayOfWeek', label: 'Day' },
-    { id: 'venue', label: 'Venue' },
-    { id: 'fee', label: 'Fee' },
-    { id: 'credits', label: 'Credits' },
-    { id: 'cneCpdNumber', label: 'CNE/CPD Number' },
-    { id: 'maxSeats', label: 'Max Seats' },
-    { id: 'currentRegistrations', label: 'Current Registrations' },
-    { id: 'seatsRemaining', label: 'Seats Remaining' },
-    { id: 'status', label: 'Status' },
-    { id: 'registrationStartDate', label: 'Registration Start Date' },
-    { id: 'registrationEndDate', label: 'Registration End Date' },
-    { id: 'createdBy', label: 'Created By' }
+    { id: 'sno', label: 'S.No' },
+    { id: 'formNumber', label: 'Form Number' },
+    { id: 'fullName', label: 'Full Name' },
+    { id: 'mobileNumber', label: 'Mobile Number' },
+    { id: 'email', label: 'Email' },
+    { id: 'mncUID', label: 'MNC UID' },
+    { id: 'mncRegistrationNumber', label: 'MNC Registration Number' },
+    { id: 'workshop', label: 'Workshop' },
+    { id: 'workshopDate', label: 'Workshop Date' },
+    { id: 'registrationSource', label: 'Registration Source' },
+    { id: 'registeredBy', label: 'Registered By' },
+    { id: 'dateOfBirth', label: 'Date of Birth' },
+    { id: 'gender', label: 'Gender' },
+    { id: 'qualification', label: 'Qualification' },
+    { id: 'organization', label: 'Organization' },
+    { id: 'experience', label: 'Experience (Years)' },
+    { id: 'address', label: 'Address' },
+    { id: 'city', label: 'City' },
+    { id: 'state', label: 'State' },
+    { id: 'pinCode', label: 'Pin Code' }
 ];
 
 // Load workshops on page load
@@ -92,7 +99,7 @@ function renderWorkshopsTable(workshops) {
     if (workshops.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7">
+                <td colspan="8">
                     <div class="empty-state">
                         <h3>No workshops found</h3>
                         <p>Create your first workshop to get started</p>
@@ -118,6 +125,9 @@ function renderWorkshopsTable(workshops) {
 
         return `
             <tr>
+                <td style="text-align: center;">
+                    <input type="radio" name="workshopSelect" value="${workshop._id}" onchange="selectWorkshop('${workshop._id}')" style="width: 18px; height: 18px; cursor: pointer;">
+                </td>
                 <td>
                     <strong>${escapeHtml(workshop.title)}</strong>
                     <div style="font-size: 12px; color: #666; margin-top: 3px;">
@@ -527,6 +537,12 @@ function showError(message) {
     alert('❌ ' + message);
 }
 
+// Select workshop for Excel download
+function selectWorkshop(workshopId) {
+    selectedWorkshopId = workshopId;
+    console.log('Selected workshop:', workshopId);
+}
+
 // Column selection modal functions
 function showColumnModal() {
     const modal = document.getElementById('columnModal');
@@ -602,14 +618,23 @@ function confirmColumnSelection() {
 }
 
 async function downloadExcel() {
+    if (!selectedWorkshopId) {
+        alert('⚠️ Please select a workshop first by clicking the radio button');
+        return;
+    }
     // Download all columns
     selectedColumns = availableColumns.map(col => col.id);
     await downloadExcelWithColumns();
 }
 
 async function downloadExcelWithColumns() {
+    if (!selectedWorkshopId) {
+        alert('⚠️ Please select a workshop first by clicking the radio button');
+        return;
+    }
+    
     try {
-        const url = '/api/admin/workshops/export-excel?columns=' + selectedColumns.join(',');
+        const url = '/api/admin/export-excel?columns=' + selectedColumns.join(',') + '&workshopId=' + selectedWorkshopId;
         
         const response = await fetch(url);
         
@@ -618,7 +643,12 @@ async function downloadExcelWithColumns() {
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
-            a.download = `workshops-${new Date().toISOString().split('T')[0]}.xlsx`;
+            
+            // Find workshop name for filename
+            const workshop = currentWorkshops.find(w => w._id === selectedWorkshopId);
+            const workshopName = workshop ? workshop.title.replace(/[^a-z0-9]/gi, '-') : 'workshop';
+            a.download = `${workshopName}-registrations-${new Date().toISOString().split('T')[0]}.xlsx`;
+            
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
