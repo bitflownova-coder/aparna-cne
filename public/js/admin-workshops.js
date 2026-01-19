@@ -523,15 +523,17 @@ function showError(message) {
 }
 
 // Select workshop for Excel download
-function selectWorkshop(workshopId) {
+window.selectWorkshop = function(workshopId) {
     selectedWorkshopId = workshopId;
     console.log('Selected workshop:', workshopId);
 }
 
 // Toggle download menu
-function toggleDownloadMenu() {
+window.toggleDownloadMenu = function() {
     const menu = document.getElementById('downloadMenu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
 }
 
 // Close download menu when clicking outside
