@@ -32,22 +32,7 @@ const availableColumns = [
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
     loadWorkshops();
-    initializeExcelDownload();
 });
-
-// Initialize Excel download functionality
-function initializeExcelDownload() {
-    const selectColumnsBtn = document.getElementById('selectColumnsBtn');
-    const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-    
-    if (selectColumnsBtn) {
-        selectColumnsBtn.addEventListener('click', showColumnModal);
-    }
-    
-    if (downloadExcelBtn) {
-        downloadExcelBtn.addEventListener('click', downloadExcel);
-    }
-}
 
 // Check if user is authenticated
 function checkAuth() {
@@ -543,8 +528,27 @@ function selectWorkshop(workshopId) {
     console.log('Selected workshop:', workshopId);
 }
 
+// Toggle download menu
+function toggleDownloadMenu() {
+    const menu = document.getElementById('downloadMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close download menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('downloadMenu');
+    const isClickInside = event.target.closest('.filter-group') && event.target.closest('.filter-group').querySelector('#downloadMenu');
+    if (!isClickInside && menu) {
+        menu.style.display = 'none';
+    }
+});
+
 // Column selection modal functions
 function showColumnModal() {
+    // Hide download menu
+    const menu = document.getElementById('downloadMenu');
+    if (menu) menu.style.display = 'none';
+    
     const modal = document.getElementById('columnModal');
     const checkboxContainer = document.getElementById('columnCheckboxes');
     

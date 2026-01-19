@@ -91,12 +91,13 @@ async function loadWorkshops() {
             
             // Three-tier sorting: Active/Upcoming first (nearest date), Full second (nearest date), Completed last (latest date)
             const workshops = result.data.sort((a, b) => {
-                // Define status priority: active/upcoming (0) > full (1) > completed (2) > others (3)
+                // Define status priority: active/upcoming (0) > full (1) > completed (2) > draft/cancelled (3)
                 const getStatusPriority = (status) => {
-                    if (status === 'active' || status === 'upcoming') return 0;
-                    if (status === 'full') return 1;
-                    if (status === 'completed') return 2;
-                    return 3;
+                    const s = status?.toLowerCase() || '';
+                    if (s === 'active' || s === 'upcoming') return 0;
+                    if (s === 'full') return 1;
+                    if (s === 'completed') return 2;
+                    return 3; // draft, cancelled, or other
                 };
                 
                 const priorityA = getStatusPriority(a.status);
@@ -109,7 +110,7 @@ async function loadWorkshops() {
                 
                 // Within same priority, sort by date
                 // For active/upcoming and full: nearest date first (ascending)
-                // For completed: latest date first (descending)
+                // For completed and others: latest date first (descending)
                 if (priorityA <= 1) {
                     return new Date(a.date) - new Date(b.date); // Nearest first
                 } else {

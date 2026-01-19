@@ -483,8 +483,6 @@
                 <p>Manage CNE workshops, registrations, and status</p>
             </div>
             <div class="header-buttons">
-                <button class="btn-secondary" id="selectColumnsBtn" style="margin-right: 8px;">⚙️ Select Columns</button>
-                <button class="btn-secondary" id="downloadExcelBtn" style="margin-right: 8px;">📊 Download Registrations</button>
                 <button class="btn-primary" onclick="showCreateModal()">✨ Create Workshop</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-mark-attendance'">✅ Mark Attendance</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-dashboard'">← Dashboard</button>
@@ -519,6 +517,14 @@
                 </div>
                 <div class="filter-group">
                     <button class="btn-secondary" onclick="clearFilters()" style="width: 100%; margin-top: 25px;">Clear Filters</button>
+                </div>
+                <div class="filter-group" style="position: relative;">
+                    <label>&nbsp;</label>
+                    <button class="btn-primary" onclick="toggleDownloadMenu()" style="width: 100%; margin-top: 0px;">📥 Download Options</button>
+                    <div id="downloadMenu" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 8px; z-index: 1000; min-width: 200px; margin-top: 5px;">
+                        <button onclick="downloadExcel()" style="width: 100%; padding: 12px; border: none; background: white; text-align: left; cursor: pointer; border-bottom: 1px solid #e2e8f0; border-radius: 8px 8px 0 0;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">📊 Download Excel</button>
+                        <button onclick="showColumnModal()" style="width: 100%; padding: 12px; border: none; background: white; text-align: left; cursor: pointer; border-radius: 0 0 8px 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">⚙️ Select Columns</button>
+                    </div>
                 </div>
             </div>
         </div>
