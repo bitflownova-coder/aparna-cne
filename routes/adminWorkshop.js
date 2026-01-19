@@ -71,14 +71,14 @@ router.get('/', isAuthenticated, async (req, res) => {
       );
     }
     
-    // Three-tier sorting: Active first, Full second, Completed last (latest date first in each tier)
+    // Three-tier sorting: Active/Upcoming first, Full second, Completed last (latest date first in each tier)
     workshops.sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
       
-      // Define status priority: active (0) > full (1) > completed (2) > others (3)
+      // Define status priority: active/upcoming (0) > full (1) > completed (2) > others (3)
       const getStatusPriority = (status) => {
-        if (status === 'active') return 0;
+        if (status === 'active' || status === 'upcoming') return 0;
         if (status === 'full') return 1;
         if (status === 'completed') return 2;
         return 3;

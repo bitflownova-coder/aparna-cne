@@ -89,11 +89,11 @@ async function loadWorkshops() {
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
             
-            // Three-tier sorting: Active first, Full second, Completed last (latest date first in each tier)
+            // Three-tier sorting: Active/Upcoming first, Full second, Completed last (latest date first in each tier)
             const workshops = result.data.sort((a, b) => {
-                // Define status priority: active (0) > full (1) > completed (2) > others (3)
+                // Define status priority: active/upcoming (0) > full (1) > completed (2) > others (3)
                 const getStatusPriority = (status) => {
-                    if (status === 'active') return 0;
+                    if (status === 'active' || status === 'upcoming') return 0;
                     if (status === 'full') return 1;
                     if (status === 'completed') return 2;
                     return 3;
