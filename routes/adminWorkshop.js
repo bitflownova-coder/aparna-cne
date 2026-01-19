@@ -70,22 +70,28 @@ router.get('/', isAuthenticated, async (req, res) => {
       );
     }
     
-    // Smart sorting: Active/upcoming first (latest date), then completed at bottom
-    const now = new Date();
+    // Three-tier sorting: Active first, Full second, Completed last (latest date first in each tier)
     workshops.sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
       
-      // Check if workshop is past (completed should go to bottom)
-      const isPastA = dateA < now || a.status === 'completed';
-      const isPastB = dateB < now || b.status === 'completed';
+      // Define status priority: active (0) > full (1) > completed (2) > others (3)
+      const getStatusPriority = (status) => {
+        if (status === 'active') return 0;
+        if (status === 'full') return 1;
+        if (status === 'completed') return 2;
+        return 3;
+      };
       
-      // Prioritize active/upcoming workshops
-      if (isPastA !== isPastB) {
-        return isPastA ? 1 : -1; // Past workshops go to bottom
+      const priorityA = getStatusPriority(a.status);
+      const priorityB = getStatusPriority(b.status);
+      
+      // If different priority, sort by priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
       }
       
-      // Within same category, sort by date (latest first)
+      // Within same priority, sort by date (latest first)
       return dateB - dateA;
     });
     

@@ -89,18 +89,26 @@ async function loadWorkshops() {
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
             
-            // Smart sorting: Active/upcoming first (latest date), then completed/full at back
+            // Three-tier sorting: Active first, Full second, Completed last (latest date first in each tier)
             const workshops = result.data.sort((a, b) => {
-                const statusPriorityA = ['active', 'upcoming'].includes(a.status) ? 0 : 1;
-                const statusPriorityB = ['active', 'upcoming'].includes(b.status) ? 0 : 1;
+                // Define status priority: active (0) > full (1) > completed (2) > others (3)
+                const getStatusPriority = (status) => {
+                    if (status === 'active') return 0;
+                    if (status === 'full') return 1;
+                    if (status === 'completed') return 2;
+                    return 3;
+                };
                 
-                // If same priority, sort by date (latest first)
-                if (statusPriorityA === statusPriorityB) {
-                    return new Date(b.date) - new Date(a.date);
+                const priorityA = getStatusPriority(a.status);
+                const priorityB = getStatusPriority(b.status);
+                
+                // If different priority, sort by priority
+                if (priorityA !== priorityB) {
+                    return priorityA - priorityB;
                 }
                 
-                // Otherwise, sort by priority (active/upcoming first)
-                return statusPriorityA - statusPriorityB;
+                // Within same priority, sort by date (latest first)
+                return new Date(b.date) - new Date(a.date);
             });
             
             workshops.forEach(workshop => {
