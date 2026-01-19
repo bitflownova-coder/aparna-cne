@@ -8,12 +8,18 @@ router.get('/', async (req, res) => {
     // Get all workshops
     let workshops = await Workshop.find({});
     
-    // Filter out drafts if necessary, keep active, upcoming, full, completed
-    workshops = workshops.filter(w => w.status !== 'draft');
+    // Filter to show only active and upcoming workshops
+    const now = new Date();
+    workshops = workshops.filter(w => {
+      // Only show active and upcoming statuses
+      const validStatus = ['active', 'upcoming'].includes(w.status);
+      // Only show workshops that haven't passed yet
+      const isUpcoming = new Date(w.date) >= now;
+      return validStatus && isUpcoming;
+    });
     
-    // Sort by date (newest first or upcoming closest?)
-    // Usually upcoming closest is better for users
-    workshops.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Sort by date descending (latest/newest first)
+    workshops.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     res.json({
       success: true,

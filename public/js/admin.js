@@ -88,8 +88,8 @@ async function loadWorkshops() {
         
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
-            // Sort by date ascending (closest upcoming workshop first)
-            const workshops = result.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            // Sort by date descending (latest/newest first)
+            const workshops = result.data.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');

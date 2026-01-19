@@ -261,7 +261,8 @@ async function loadAllWorkshops() {
         // Remove duplicates based on _id
         const uniqueWorkshops = Array.from(new Map(workshops.map(item => [item._id, item])).values());
         
-        allWorkshops = uniqueWorkshops.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Sort by date descending (latest/newest first)
+        allWorkshops = uniqueWorkshops.sort((a, b) => new Date(b.date) - new Date(a.date));
         
         // Show list or empty state
         displayWorkshopsList();
