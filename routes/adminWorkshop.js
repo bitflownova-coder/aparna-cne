@@ -6,6 +6,7 @@ const { isAuthenticated } = require('../middleware/auth');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const XLSX = require('xlsx');
 
 // Configure multer for QR code uploads
 const qrStorage = multer.diskStorage({
@@ -430,6 +431,123 @@ router.get('/:id/registrations', isAuthenticated, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching registrations'
+    });
+  }
+});
+
+// Export workshops to Excel
+router.get('/export-excel', isAuthenticated, async (req, res) => {
+  try {
+    const { columns } = req.query;
+    const selectedColumns = columns ? columns.split(',') : [];
+    
+    // Get all workshops with the same smart sorting
+    let workshops = await Workshop.find({});
+    
+    // Apply smart sorting
+    workshops.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      const getStatusPriority = (status) => {
+        if (status === 'active') return 0;
+        if (status === 'full') return 1;
+        if (status === 'completed') return 2;
+        return 3;
+      };
+      
+      const priorityA = getStatusPriority(a.status);
+      const priorityB = getStatusPriority(b.status);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      return dateB - dateA;
+    });
+    
+    // Column mapping
+    const columnMapping = {
+      'title': 'Workshop Title',
+      'date': 'Workshop Date',
+      'dayOfWeek': 'Day',
+      'venue': 'Venue',
+      'venueLink': 'Venue Link',
+      'fee': 'Fee',
+      'credits': 'Credits',
+      'cneCpdNumber': 'CNE/CPD Number',
+      'maxSeats': 'Max Seats',
+      'currentRegistrations': 'Current Registrations',
+      'seatsRemaining': 'Seats Remaining',
+      'status': 'Status',
+      'registrationStartDate': 'Registration Start Date',
+      'registrationEndDate': 'Registration End Date',
+      'createdBy': 'Created By',
+      'createdAt': 'Created At'
+    };
+    
+    // Prepare data
+    const data = workshops.map((workshop, index) => {
+      const row = { 'S.No': index + 1 };
+      
+      const columnsToInclude = selectedColumns.length > 0 ? selectedColumns : Object.keys(columnMapping);
+      
+      columnsToInclude.forEach(col => {
+        const header = columnMapping[col] || col;
+        let value = workshop[col];
+        
+        // Format dates
+        if ((col === 'date' || col === 'registrationStartDate' || col === 'registrationEndDate' || col === 'createdAt') && value) {
+          value = new Date(value).toLocaleDateString('en-IN');
+        }
+        
+        // Calculate seats remaining
+        if (col === 'seatsRemaining') {
+          value = Math.max(0, (workshop.maxSeats || 0) - (workshop.currentRegistrations || 0));
+        }
+        
+        row[header] = value || '';
+      });
+      
+      return row;
+    });
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 8 },  // S.No
+      { wch: 30 }, // Title
+      { wch: 15 }, // Date
+      { wch: 12 }, // Day
+      { wch: 30 }, // Venue
+      { wch: 15 }, // Fee
+      { wch: 10 }, // Credits
+      { wch: 15 }, // CNE/CPD Number
+      { wch: 12 }, // Max Seats
+      { wch: 20 }, // Current Registrations
+      { wch: 15 }, // Status
+    ];
+    worksheet['!cols'] = colWidths;
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Workshops');
+    
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Set headers
+    res.setHeader('Content-Disposition', `attachment; filename=workshops-${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('Error exporting workshops to Excel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting to Excel'
     });
   }
 });

@@ -483,6 +483,8 @@
                 <p>Manage CNE workshops, registrations, and status</p>
             </div>
             <div class="header-buttons">
+                <button class="btn-secondary" id="selectColumnsBtn" style="margin-right: 8px;">⚙️ Select Columns</button>
+                <button class="btn-secondary" id="downloadExcelBtn" style="margin-right: 8px;">📊 Download Excel</button>
                 <button class="btn-primary" onclick="showCreateModal()">✨ Create Workshop</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-mark-attendance'">✅ Mark Attendance</button>
                 <button class="btn-secondary" onclick="window.location.href='/admin-dashboard'">← Dashboard</button>
@@ -713,6 +715,31 @@
                     <button type="submit" class="btn-primary">Change Status</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Column Selector Modal -->
+    <div id="columnModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; padding: 20px; overflow: auto;">
+        <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; padding: 24px; position: relative;">
+            <button onclick="closeColumnModal()" style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; cursor: pointer; font-weight: bold;">×</button>
+            
+            <h2 style="margin-bottom: 20px; color: #1e293b;">Select Columns for Excel Export</h2>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; background: #f1f5f9; border-radius: 6px; margin-bottom: 8px;">
+                    <input type="checkbox" id="selectAllColumns" onchange="toggleAllColumns()" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-weight: 600; color: #667eea;">Select All / Deselect All</span>
+                </label>
+            </div>
+            
+            <div id="columnCheckboxes" style="max-height: 400px; overflow-y: auto; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                <!-- Checkboxes will be inserted here by JavaScript -->
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeColumnModal()" style="padding: 10px 20px; background: #e2e8f0; color: #334155; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button onclick="confirmColumnSelection()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Download with Selected Columns</button>
+            </div>
         </div>
     </div>
 

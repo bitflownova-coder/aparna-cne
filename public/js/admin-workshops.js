@@ -1,12 +1,46 @@
 // Workshop Management JavaScript
 let currentWorkshops = [];
 let editingWorkshopId = null;
+let selectedColumns = [];
+
+// Available columns for export
+const availableColumns = [
+    { id: 'title', label: 'Workshop Title' },
+    { id: 'date', label: 'Workshop Date' },
+    { id: 'dayOfWeek', label: 'Day' },
+    { id: 'venue', label: 'Venue' },
+    { id: 'fee', label: 'Fee' },
+    { id: 'credits', label: 'Credits' },
+    { id: 'cneCpdNumber', label: 'CNE/CPD Number' },
+    { id: 'maxSeats', label: 'Max Seats' },
+    { id: 'currentRegistrations', label: 'Current Registrations' },
+    { id: 'seatsRemaining', label: 'Seats Remaining' },
+    { id: 'status', label: 'Status' },
+    { id: 'registrationStartDate', label: 'Registration Start Date' },
+    { id: 'registrationEndDate', label: 'Registration End Date' },
+    { id: 'createdBy', label: 'Created By' }
+];
 
 // Load workshops on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
     loadWorkshops();
+    initializeExcelDownload();
 });
+
+// Initialize Excel download functionality
+function initializeExcelDownload() {
+    const selectColumnsBtn = document.getElementById('selectColumnsBtn');
+    const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+    
+    if (selectColumnsBtn) {
+        selectColumnsBtn.addEventListener('click', showColumnModal);
+    }
+    
+    if (downloadExcelBtn) {
+        downloadExcelBtn.addEventListener('click', downloadExcel);
+    }
+}
 
 // Check if user is authenticated
 function checkAuth() {
@@ -493,9 +527,116 @@ function showError(message) {
     alert('❌ ' + message);
 }
 
+// Column selection modal functions
+function showColumnModal() {
+    const modal = document.getElementById('columnModal');
+    const checkboxContainer = document.getElementById('columnCheckboxes');
+    
+    // Clear previous checkboxes
+    checkboxContainer.innerHTML = '';
+    
+    // Create checkboxes for each column
+    availableColumns.forEach(col => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; padding: 10px; cursor: pointer; border-radius: 6px; margin-bottom: 6px; transition: background 0.2s;';
+        label.onmouseover = () => label.style.background = '#f1f5f9';
+        label.onmouseout = () => label.style.background = 'transparent';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = col.id;
+        checkbox.checked = selectedColumns.includes(col.id) || selectedColumns.length === 0;
+        checkbox.style.cssText = 'margin-right: 10px; width: 18px; height: 18px; cursor: pointer;';
+        checkbox.onchange = updateSelectedColumns;
+        
+        const span = document.createElement('span');
+        span.textContent = col.label;
+        span.style.color = '#334155';
+        
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        checkboxContainer.appendChild(label);
+    });
+    
+    // Initialize if empty
+    if (selectedColumns.length === 0) {
+        selectedColumns = availableColumns.map(col => col.id);
+    }
+    
+    modal.style.display = 'block';
+}
+
+function closeColumnModal() {
+    document.getElementById('columnModal').style.display = 'none';
+}
+
+function toggleAllColumns() {
+    const selectAll = document.getElementById('selectAllColumns').checked;
+    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+    
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+    });
+    
+    updateSelectedColumns();
+}
+
+function updateSelectedColumns() {
+    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+    selectedColumns = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+    
+    // Update "Select All" checkbox state
+    const selectAllCheckbox = document.getElementById('selectAllColumns');
+    selectAllCheckbox.checked = selectedColumns.length === availableColumns.length;
+}
+
+function confirmColumnSelection() {
+    if (selectedColumns.length === 0) {
+        alert('Please select at least one column');
+        return;
+    }
+    closeColumnModal();
+    downloadExcelWithColumns();
+}
+
+async function downloadExcel() {
+    // Download all columns
+    selectedColumns = availableColumns.map(col => col.id);
+    await downloadExcelWithColumns();
+}
+
+async function downloadExcelWithColumns() {
+    try {
+        const url = '/api/admin/workshops/export-excel?columns=' + selectedColumns.join(',');
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `workshops-${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+            showSuccess('Excel downloaded successfully!');
+        } else {
+            showError('Failed to download Excel');
+        }
+    } catch (error) {
+        console.error('Error downloading Excel:', error);
+        showError('Error downloading Excel');
+    }
+}
+
 // Close modals when clicking outside
 window.onclick = function(event) {
-    const modals = ['workshopModal', 'qrUploadModal', 'statusModal'];
+    const modals = ['workshopModal', 'qrUploadModal', 'statusModal', 'columnModal'];
     modals.forEach(modalId => {
         const modal = document.getElementById(modalId);
         if (event.target === modal) {
