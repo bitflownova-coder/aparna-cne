@@ -622,6 +622,10 @@ function confirmColumnSelection() {
 }
 
 async function downloadExcel() {
+    // Hide download menu
+    const menu = document.getElementById('downloadMenu');
+    if (menu) menu.style.display = 'none';
+    
     if (!selectedWorkshopId) {
         alert('⚠️ Please select a workshop first by clicking the radio button');
         return;

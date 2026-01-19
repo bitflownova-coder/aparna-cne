@@ -89,34 +89,10 @@ async function loadWorkshops() {
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
             
-            // Three-tier sorting: Active/Upcoming first (nearest date), Full second (nearest date), Completed last (latest date)
-            const workshops = result.data.sort((a, b) => {
-                // Define status priority: active/upcoming (0) > full (1) > completed (2) > draft/cancelled (3)
-                const getStatusPriority = (status) => {
-                    const s = status?.toLowerCase() || '';
-                    if (s === 'active' || s === 'upcoming') return 0;
-                    if (s === 'full') return 1;
-                    if (s === 'completed') return 2;
-                    return 3; // draft, cancelled, or other
-                };
-                
-                const priorityA = getStatusPriority(a.status);
-                const priorityB = getStatusPriority(b.status);
-                
-                // If different priority, sort by priority
-                if (priorityA !== priorityB) {
-                    return priorityA - priorityB;
-                }
-                
-                // Within same priority, sort by date
-                // For active/upcoming and full: nearest date first (ascending)
-                // For completed and others: latest date first (descending)
-                if (priorityA <= 1) {
-                    return new Date(a.date) - new Date(b.date); // Nearest first
-                } else {
-                    return new Date(b.date) - new Date(a.date); // Latest first
-                }
-            });
+            // Backend already sorts the workshops, just display them in order
+            const workshops = result.data;
+            
+            console.log('Workshops received:', workshops.map(w => `${w.title} - ${w.status} - ${w.date}`));
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');

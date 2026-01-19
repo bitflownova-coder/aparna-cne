@@ -102,6 +102,9 @@ router.get('/', isAuthenticated, async (req, res) => {
       }
     });
     
+    // Log sorted workshops for debugging
+    console.log('Sorted workshops:', workshops.map(w => `${w.title} - ${w.status} - ${w.date}`));
+    
     res.json({
       success: true,
       data: workshops
