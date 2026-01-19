@@ -101,6 +101,7 @@ async function performLookup() {
         });
         
         const result = await response.json();
+        console.log('Lookup response:', result);
         
         if (result.success && result.found) {
             const d = result.data;

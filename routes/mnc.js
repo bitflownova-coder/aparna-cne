@@ -16,6 +16,8 @@ router.post('/lookup', async (req, res) => {
   try {
     const { mncUID, mncRegistrationNumber } = req.body;
     
+    console.log('MNC Lookup request:', { mncUID, mncRegistrationNumber });
+    
     if (!mncUID && !mncRegistrationNumber) {
       return res.status(400).json({
         success: false,
@@ -27,9 +29,11 @@ router.post('/lookup', async (req, res) => {
     let foundStudent = null;
     if (mncUID) {
       foundStudent = await Student.findByMncUID(mncUID);
+      console.log('Search by mncUID result:', foundStudent ? 'Found' : 'Not found');
     }
     if (!foundStudent && mncRegistrationNumber) {
       foundStudent = await Student.findByMncRegistrationNumber(mncRegistrationNumber);
+      console.log('Search by mncRegistrationNumber result:', foundStudent ? 'Found' : 'Not found');
     }
     
     if (foundStudent) {
