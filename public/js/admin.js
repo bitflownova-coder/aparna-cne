@@ -89,7 +89,7 @@ async function loadWorkshops() {
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
             
-            // Three-tier sorting: Active/Upcoming first, Full second, Completed last (latest date first in each tier)
+            // Three-tier sorting: Active/Upcoming first (nearest date), Full second (nearest date), Completed last (latest date)
             const workshops = result.data.sort((a, b) => {
                 // Define status priority: active/upcoming (0) > full (1) > completed (2) > others (3)
                 const getStatusPriority = (status) => {
@@ -107,8 +107,14 @@ async function loadWorkshops() {
                     return priorityA - priorityB;
                 }
                 
-                // Within same priority, sort by date (latest first)
-                return new Date(b.date) - new Date(a.date);
+                // Within same priority, sort by date
+                // For active/upcoming and full: nearest date first (ascending)
+                // For completed: latest date first (descending)
+                if (priorityA <= 1) {
+                    return new Date(a.date) - new Date(b.date); // Nearest first
+                } else {
+                    return new Date(b.date) - new Date(a.date); // Latest first
+                }
             });
             
             workshops.forEach(workshop => {

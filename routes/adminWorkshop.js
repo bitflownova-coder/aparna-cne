@@ -71,7 +71,7 @@ router.get('/', isAuthenticated, async (req, res) => {
       );
     }
     
-    // Three-tier sorting: Active/Upcoming first, Full second, Completed last (latest date first in each tier)
+    // Three-tier sorting: Active/Upcoming first (nearest date), Full second (nearest date), Completed last (latest date)
     workshops.sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
@@ -92,8 +92,14 @@ router.get('/', isAuthenticated, async (req, res) => {
         return priorityA - priorityB;
       }
       
-      // Within same priority, sort by date (latest first)
-      return dateB - dateA;
+      // Within same priority, sort by date
+      // For active/upcoming and full: nearest date first (ascending)
+      // For completed: latest date first (descending)
+      if (priorityA <= 1) {
+        return dateA - dateB; // Nearest first
+      } else {
+        return dateB - dateA; // Latest first
+      }
     });
     
     res.json({
@@ -444,13 +450,13 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
     // Get all workshops with the same smart sorting
     let workshops = await Workshop.find({});
     
-    // Apply smart sorting
+    // Apply smart sorting: Active/Upcoming (nearest), Full (nearest), Completed (latest)
     workshops.sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
       
       const getStatusPriority = (status) => {
-        if (status === 'active') return 0;
+        if (status === 'active' || status === 'upcoming') return 0;
         if (status === 'full') return 1;
         if (status === 'completed') return 2;
         return 3;
@@ -463,7 +469,12 @@ router.get('/export-excel', isAuthenticated, async (req, res) => {
         return priorityA - priorityB;
       }
       
-      return dateB - dateA;
+      // For active/upcoming and full: nearest first, for completed: latest first
+      if (priorityA <= 1) {
+        return dateA - dateB; // Nearest first
+      } else {
+        return dateB - dateA; // Latest first
+      }
     });
     
     // Column mapping
