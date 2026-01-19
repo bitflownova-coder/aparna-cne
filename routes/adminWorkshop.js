@@ -119,21 +119,6 @@ router.get('/', isAuthenticated, async (req, res) => {
   }
 });
 
-// Debug endpoint to check workshop statuses
-router.get('/debug/statuses', isAuthenticated, async (req, res) => {
-  try {
-    const workshops = await Workshop.find({});
-    const statusList = workshops.map(w => ({
-      title: w.title,
-      status: w.status,
-      date: w.date
-    }));
-    res.json({ success: true, data: statusList });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 // Get specific workshop
 router.get('/:id', isAuthenticated, async (req, res) => {
   try {

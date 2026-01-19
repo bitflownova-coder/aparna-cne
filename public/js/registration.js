@@ -77,23 +77,17 @@ async function lookupMNC() {
 
 // New Lookup Function for Integrated Form
 async function performLookup() {
-    const input = document.getElementById('lookupInput');
-    const value = input.value.trim();
     const roman = document.getElementById('lookupRegRoman').value;
-    const number = document.getElementById('lookupRegNumber').value;
+    const number = document.getElementById('lookupRegNumber').value.trim();
     const btn = document.querySelector('.btn-check');
     
-    // Check if either MNC UID or Registration Number is provided
-    let lookupValue = value;
-    if (!value && roman && number) {
-        lookupValue = `${roman}-${number}`;
-    }
-    
-    if (!lookupValue) {
-        showAlert('Please enter MNC UID or Registration Number', 'error');
-        input.focus();
+    // Check if Registration Number is provided
+    if (!roman || !number) {
+        showAlert('Please select Roman numeral and enter the number', 'error');
         return;
     }
+    
+    const lookupValue = `${roman}-${number}`;
 
     const originalText = btn.textContent;
     btn.disabled = true;
@@ -103,7 +97,7 @@ async function performLookup() {
         const response = await fetch('/api/mnc/lookup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mncUID: value || '', mncRegistrationNumber: lookupValue })
+            body: JSON.stringify({ mncRegistrationNumber: lookupValue })
         });
         
         const result = await response.json();
