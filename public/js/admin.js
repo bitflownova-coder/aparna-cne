@@ -88,8 +88,20 @@ async function loadWorkshops() {
         
         if (result.success && result.data) {
             const workshopFilter = document.getElementById('workshopFilter');
-            // Sort by date descending (latest/newest first)
-            const workshops = result.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Smart sorting: Active/upcoming first (latest date), then completed/full at back
+            const workshops = result.data.sort((a, b) => {
+                const statusPriorityA = ['active', 'upcoming'].includes(a.status) ? 0 : 1;
+                const statusPriorityB = ['active', 'upcoming'].includes(b.status) ? 0 : 1;
+                
+                // If same priority, sort by date (latest first)
+                if (statusPriorityA === statusPriorityB) {
+                    return new Date(b.date) - new Date(a.date);
+                }
+                
+                // Otherwise, sort by priority (active/upcoming first)
+                return statusPriorityA - statusPriorityB;
+            });
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');
@@ -99,7 +111,8 @@ async function loadWorkshops() {
                     month: 'short', 
                     day: 'numeric' 
                 });
-                option.textContent = `${workshop.title} - ${date}`;
+                const statusLabel = ['completed', 'full'].includes(workshop.status) ? ` [${workshop.status.toUpperCase()}]` : '';
+                option.textContent = `${workshop.title} - ${date}${statusLabel}`;
                 workshopFilter.appendChild(option);
             });
         }

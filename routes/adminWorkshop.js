@@ -47,20 +47,7 @@ router.get('/', isAuthenticated, async (req, res) => {
     // Get all workshops
     let workshops = await Workshop.find({});
     
-    // Filter to show only active, full, and completed workshops
-    // that are currently happening or upcoming (not past workshops)
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000)); // 1 day buffer
-    
-    workshops = workshops.filter(w => {
-      // Only show active, full, and completed statuses
-      const validStatus = ['active', 'full', 'completed'].includes(w.status);
-      // Only show workshops from yesterday onwards (current or upcoming)
-      const isCurrentOrUpcoming = new Date(w.date) >= oneDayAgo;
-      return validStatus && isCurrentOrUpcoming;
-    });
-    
-    // Apply additional filters if provided
+    // Apply user filters if provided
     if (status && status !== 'all') {
       workshops = workshops.filter(w => w.status === status);
     }
@@ -83,8 +70,24 @@ router.get('/', isAuthenticated, async (req, res) => {
       );
     }
     
-    // Sort by date descending (latest/newest first)
-    workshops.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Smart sorting: Active/upcoming first (latest date), then completed at bottom
+    const now = new Date();
+    workshops.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      // Check if workshop is past (completed should go to bottom)
+      const isPastA = dateA < now || a.status === 'completed';
+      const isPastB = dateB < now || b.status === 'completed';
+      
+      // Prioritize active/upcoming workshops
+      if (isPastA !== isPastB) {
+        return isPastA ? 1 : -1; // Past workshops go to bottom
+      }
+      
+      // Within same category, sort by date (latest first)
+      return dateB - dateA;
+    });
     
     res.json({
       success: true,
