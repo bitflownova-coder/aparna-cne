@@ -541,13 +541,15 @@ async function confirmSubmission() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             showAlert(data.message || 'Registration failed', 'error');
+            console.error('Registration failed:', data);
         }
     } catch (error) {
         console.error('Submission error:', error);
-        showAlert('Error submitting registration. Please try again.', 'error');
+        showAlert('Error submitting registration. Please check console for details.', 'error');
     } finally {
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Confirm & Submit';
+        closeModal();
     }
 }
 
