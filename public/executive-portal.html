@@ -445,7 +445,17 @@
         <div class="registrations-section">
             <div class="section-header">
                 <h3 class="section-title">📋 My Registrations</h3>
-                <input type="text" class="search-box" id="searchBox" placeholder="Search by name, mobile, MNC UID..." onkeyup="filterRegistrations()">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="sortBy" class="search-box" style="width: 180px;" onchange="sortRegistrations()">
+                        <option value="formNumber-desc">Form No. (Newest)</option>
+                        <option value="formNumber-asc">Form No. (Oldest)</option>
+                        <option value="date-desc">Date (Latest)</option>
+                        <option value="date-asc">Date (Earliest)</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                    </select>
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search by name, mobile, MNC UID..." onkeyup="filterRegistrations()">
+                </div>
             </div>
             <div class="table-container">
                 <table class="registrations-table">
@@ -562,7 +572,60 @@
                 return searchStr.includes(searchTerm);
             });
             
-            renderRegistrations(filtered);
+            // Apply current sorting before rendering
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = sortRegistrationsData(filtered, sortBy);
+            renderRegistrations(sorted);
+        }
+
+        function sortRegistrations() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            // Filter first
+            let filtered = allRegistrations.filter(reg => {
+                const searchStr = `${reg.fullName || ''} ${reg.name || ''} ${reg.mobileNumber || ''} ${reg.mncUID || ''} ${reg.formNumber || ''} ${reg.workshopTitle || ''}`.toLowerCase();
+                return searchStr.includes(searchTerm);
+            });
+            
+            // Then sort
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = sortRegistrationsData(filtered, sortBy);
+            renderRegistrations(sorted);
+        }
+
+        function sortRegistrationsData(registrations, sortBy) {
+            const sorted = [...registrations];
+            
+            switch(sortBy) {
+                case 'formNumber-desc':
+                    sorted.sort((a, b) => {
+                        const numA = parseInt((a.formNumber || '0').replace(/[^0-9]/g, '')) || 0;
+                        const numB = parseInt((b.formNumber || '0').replace(/[^0-9]/g, '')) || 0;
+                        return numB - numA;
+                    });
+                    break;
+                case 'formNumber-asc':
+                    sorted.sort((a, b) => {
+                        const numA = parseInt((a.formNumber || '0').replace(/[^0-9]/g, '')) || 0;
+                        const numB = parseInt((b.formNumber || '0').replace(/[^0-9]/g, '')) || 0;
+                        return numA - numB;
+                    });
+                    break;
+                case 'date-desc':
+                    sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                    break;
+                case 'date-asc':
+                    sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+                    break;
+                case 'name-asc':
+                    sorted.sort((a, b) => (a.fullName || a.name || '').localeCompare(b.fullName || b.name || ''));
+                    break;
+                case 'name-desc':
+                    sorted.sort((a, b) => (b.fullName || b.name || '').localeCompare(a.fullName || a.name || ''));
+                    break;
+            }
+            
+            return sorted;
         }
 
         function formatDate(dateStr) {
