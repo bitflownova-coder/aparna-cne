@@ -295,6 +295,7 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    console.error('Error stack:', error.stack);
     
     if (error.code === 11000) {
       return res.status(400).json({
@@ -305,7 +306,8 @@ router.post('/submit', upload.single('paymentScreenshot'), async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Error submitting registration: ' + error.message
+      message: 'Error submitting registration: ' + error.message,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
