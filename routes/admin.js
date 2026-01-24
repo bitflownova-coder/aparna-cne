@@ -65,6 +65,17 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Block deprecated hardcoded admin credentials
+    const deprecatedUsername = 'aparnainstitutes';
+    const deprecatedPassword = 'APARNA@2025!Admin';
+    
+    if (username === deprecatedUsername && password === deprecatedPassword) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account has been disabled. Please contact the developer for assistance.'
+      });
+    }
+
     // Try admin login first
     const isAdmin = await verifyAdminCredentials(username, password);
 
