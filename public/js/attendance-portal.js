@@ -52,17 +52,25 @@ function toggleFullscreen() {
 
 async function loadWorkshops() {
     try {
-        const response = await fetch('/api/workshop');
+        // Use admin endpoint to get ALL workshops (including full and completed)
+        const response = await fetch('/api/admin/workshops');
         const result = await response.json();
         
         if (result.success && result.data) {
             const select = document.getElementById('workshopSelect');
-            const workshops = result.data.filter(w => ['active', 'full'].includes(w.status));
+            // Show all workshops, not just active/full
+            const workshops = result.data;
             
             workshops.forEach(workshop => {
                 const option = document.createElement('option');
                 option.value = workshop._id;
-                option.textContent = `${workshop.title} - ${new Date(workshop.date).toLocaleDateString()}`;
+                const date = new Date(workshop.date).toLocaleDateString('en-IN', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                const statusLabel = ['completed', 'full'].includes(workshop.status) ? ` [${workshop.status.toUpperCase()}]` : '';
+                option.textContent = `${workshop.title} - ${date}${statusLabel}`;
                 option.dataset.workshop = JSON.stringify(workshop);
                 select.appendChild(option);
             });

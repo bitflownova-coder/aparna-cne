@@ -387,8 +387,8 @@
         
         async function loadData() {
             try {
-                // Load workshops
-                const wsResponse = await fetch('/api/workshop');
+                // Load workshops (use admin endpoint to get ALL workshops)
+                const wsResponse = await fetch('/api/admin/workshops');
                 const wsResult = await wsResponse.json();
                 
                 if (wsResult.success) {
@@ -422,24 +422,23 @@
             const quickSelect = document.getElementById('quickWorkshop');
             const filterSelect = document.getElementById('workshopFilter');
             
-            // Sort by date
-            const sortedWorkshops = allWorkshops.sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            sortedWorkshops.forEach(ws => {
+            // Workshops are already sorted by admin API (active/upcoming first, then full, then completed)
+            allWorkshops.forEach(ws => {
                 const date = new Date(ws.date).toLocaleDateString('en-IN', { 
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric' 
                 });
+                const statusLabel = ['completed', 'full'].includes(ws.status) ? ` [${ws.status.toUpperCase()}]` : '';
                 
                 const option1 = document.createElement('option');
                 option1.value = ws._id;
-                option1.textContent = `${ws.title} - ${date}`;
+                option1.textContent = `${ws.title} - ${date}${statusLabel}`;
                 quickSelect.appendChild(option1);
                 
                 const option2 = document.createElement('option');
                 option2.value = ws._id;
-                option2.textContent = `${ws.title} - ${date}`;
+                option2.textContent = `${ws.title} - ${date}${statusLabel}`;
                 filterSelect.appendChild(option2);
             });
         }

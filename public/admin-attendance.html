@@ -252,8 +252,8 @@
                     allAttendance = attResult.data || [];
                 }
                 
-                // Load workshops
-                const wsResponse = await fetch('/api/workshop');
+                // Load workshops (use admin endpoint to get ALL workshops)
+                const wsResponse = await fetch('/api/admin/workshops');
                 const wsResult = await wsResponse.json();
                 
                 if (wsResult.success) {
@@ -271,10 +271,17 @@
         
         function populateWorkshopFilter() {
             const select = document.getElementById('filterWorkshop');
+            // Workshops are already sorted by admin API (active/upcoming first, then full, then completed)
             allWorkshops.forEach(ws => {
                 const option = document.createElement('option');
                 option.value = ws._id;
-                option.textContent = ws.title;
+                const date = new Date(ws.date).toLocaleDateString('en-IN', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                const statusLabel = ['completed', 'full'].includes(ws.status) ? ` [${ws.status.toUpperCase()}]` : '';
+                option.textContent = `${ws.title} - ${date}${statusLabel}`;
                 select.appendChild(option);
             });
         }
